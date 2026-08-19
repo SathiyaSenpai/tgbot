@@ -1,0 +1,28 @@
+[Unit]
+Description=Avalon Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=senpai
+Group=senpai
+WorkingDirectory=/opt/senpais-bot
+Environment=PYTHONUNBUFFERED=1
+Environment=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
+ExecStart=/opt/senpais-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=5
+
+# Memory safety net - prevent OOM killer from taking down the OS
+MemoryMax=300M
+MemoryHigh=250M
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/senpais-bot/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
