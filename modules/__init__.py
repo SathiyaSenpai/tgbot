@@ -23,35 +23,15 @@ def register_all_handlers(app: Application) -> None:
         except Exception as e:
             logger.error(f"✗ Failed to load commandcontrol: {e}")
 
-        try:
-            from modules.antiflood import register as reg_antiflood
-            reg_antiflood(app)
-            logger.info("✓ Loaded: antiflood")
-        except Exception as e:
-            logger.error(f"✗ Failed to load antiflood: {e}")
-
         modules_group0 = [
-            ("admin", "modules.admin"),
-            ("mutes", "modules.mutes"),
-            ("warnings", "modules.warnings"),
-            ("blocklist", "modules.blocklist"),
-            ("filters", "modules.filters"),
-            ("notes", "modules.notes"),
-            ("rules", "modules.rules"),
-            ("greetings", "modules.greetings"),
-            ("pins", "modules.pins"),
-            ("purge", "modules.purge"),
-            ("connection", "modules.connection"),
-            ("locks", "modules.locks"),
-            ("reports", "modules.reports"),
-            ("approvals", "modules.approvals"),
             ("logchannel", "modules.logchannel"),
-            ("captcha", "modules.captcha"),
             ("scheduled", "modules.scheduled"),
             ("autodelete", "modules.autodelete"),
             ("botsettings", "modules.botsettings"),
             ("misc", "modules.misc"),
             ("translation", "modules.translation"),
+            ("ai_chat", "modules.ai_chat"),
+            ("random_chatter", "modules.random_chatter"),
         ]
 
         for name, module_path in modules_group0:

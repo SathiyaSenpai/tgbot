@@ -15,6 +15,7 @@ OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 # Personal Access Token for higher rate limits (5000/hr vs 60/hr)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # How often to poll GitHub for new commits (in minutes)
 COMMIT_POLL_INTERVAL = int(os.getenv("COMMIT_POLL_INTERVAL", "5"))
@@ -29,6 +30,8 @@ ENABLE_GROUP_MANAGEMENT = os.getenv("ENABLE_GROUP_MANAGEMENT", "true").lower() =
 
 def validate_config():
     errors = []
+    if not GEMINI_API_KEY:
+        errors.append("GEMINI_API_KEY is not set. Get it from Google AI Studio.")
     if not BOT_TOKEN:
         errors.append("BOT_TOKEN is not set. Get it from @BotFather on Telegram")
     if OWNER_ID == 0:
