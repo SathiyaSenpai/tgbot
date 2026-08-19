@@ -73,7 +73,7 @@ def admin_required(func: Callable) -> Callable:
 
         user_id = update.effective_user.id
         if not await is_user_admin(update.effective_chat.id, user_id, context):
-            await update.effective_message.reply_text("You need to be an admin to use this command.")
+            await update.effective_message.reply_text("❌ You need to be an admin to use this command.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper
@@ -84,13 +84,13 @@ def owner_required(func: Callable) -> Callable:
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         if not update.effective_chat or update.effective_chat.type == ChatType.PRIVATE:
             if update.effective_user.id != OWNER_ID:
-                await update.effective_message.reply_text("Only the bot owner can use this command.")
+                await update.effective_message.reply_text("❌ Only the bot owner can use this command.")
                 return
             return await func(update, context, *args, **kwargs)
 
         user_id = update.effective_user.id
         if not await is_user_owner(update.effective_chat.id, user_id, context):
-            await update.effective_message.reply_text("Only the group owner can use this command.")
+            await update.effective_message.reply_text("❌ Only the group owner can use this command.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper
@@ -105,7 +105,7 @@ def can_restrict(func: Callable) -> Callable:
 
         user_id = update.effective_user.id
         if not await is_user_admin(chat.id, user_id, context):
-            await update.effective_message.reply_text("You need to be an admin to use this command.")
+            await update.effective_message.reply_text("❌ You need to be an admin to use this command.")
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
@@ -113,7 +113,7 @@ def can_restrict(func: Callable) -> Callable:
             bot_member.status == ChatMemberStatus.ADMINISTRATOR and bot_member.can_restrict_members
         ):
             await update.effective_message.reply_text(
-                "I need 'Restrict Members'admin permission to do this."
+                "❌ I need 'Restrict Members' admin permission to do this."
             )
             return
 
@@ -130,7 +130,7 @@ def can_delete(func: Callable) -> Callable:
 
         user_id = update.effective_user.id
         if not await is_user_admin(chat.id, user_id, context):
-            await update.effective_message.reply_text("You need to be an admin to use this command.")
+            await update.effective_message.reply_text("❌ You need to be an admin to use this command.")
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
@@ -138,7 +138,7 @@ def can_delete(func: Callable) -> Callable:
             bot_member.status == ChatMemberStatus.ADMINISTRATOR and bot_member.can_delete_messages
         ):
             await update.effective_message.reply_text(
-                "I need 'Delete Messages'admin permission to do this."
+                "❌ I need 'Delete Messages' admin permission to do this."
             )
             return
 
@@ -155,7 +155,7 @@ def can_pin(func: Callable) -> Callable:
 
         user_id = update.effective_user.id
         if not await is_user_admin(chat.id, user_id, context):
-            await update.effective_message.reply_text("You need to be an admin to use this command.")
+            await update.effective_message.reply_text("❌ You need to be an admin to use this command.")
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
@@ -163,7 +163,7 @@ def can_pin(func: Callable) -> Callable:
             bot_member.status == ChatMemberStatus.ADMINISTRATOR and bot_member.can_pin_messages
         ):
             await update.effective_message.reply_text(
-                "I need 'Pin Messages'admin permission to do this."
+                "❌ I need 'Pin Messages' admin permission to do this."
             )
             return
 
@@ -175,7 +175,7 @@ def private_only(func: Callable) -> Callable:
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         if update.effective_chat and update.effective_chat.type != ChatType.PRIVATE:
-            await update.effective_message.reply_text("This command only works in private chat.")
+            await update.effective_message.reply_text("❌ This command only works in private chat.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper
@@ -185,7 +185,7 @@ def group_only(func: Callable) -> Callable:
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         if update.effective_chat and update.effective_chat.type == ChatType.PRIVATE:
-            await update.effective_message.reply_text("This command only works in groups.")
+            await update.effective_message.reply_text("❌ This command only works in groups.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper

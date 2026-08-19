@@ -66,7 +66,7 @@ async def forward_setlog_handler(update: Update, context: ContextTypes.DEFAULT_T
     
     try:
         bot_member = await context.bot.get_chat_member(channel_id, context.bot.id)
-        if bot_member.status != 'administrator'or not bot_member.can_post_messages:
+        if bot_member.status != 'administrator' or not bot_member.can_post_messages:
             await msg.reply_text("I need to be an admin with post rights in that channel first.", parse_mode=ParseMode.HTML)
             return
     except TelegramError:

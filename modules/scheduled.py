@@ -43,12 +43,12 @@ async def schedule_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
         await db.execute(
-            "INSERT INTO scheduled_messages (chat_id, user_id, message_text, send_at, job_id, sent) VALUES (?, ?, ?, datetime(CURRENT_TIMESTAMP, '+'|| ? || 'seconds'), ?, 0)",
+            "INSERT INTO scheduled_messages (chat_id, user_id, message_text, send_at, job_id, sent) VALUES (?, ?, ?, datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), ?, 0)",
             (chat_id, user_id, message_text, delay, job.id)
         )
         await db.commit()
         
-        await update.effective_message.reply_text(f"Message scheduled to be sent in {time_str}.")
+        await update.effective_message.reply_text(f"✅ Message scheduled to be sent in {time_str}.")
     except Exception as e:
         logger.error(f"Error scheduling message: {e}")
         await update.effective_message.reply_text("Failed to schedule message.")
@@ -84,9 +84,9 @@ async def list_schedules(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.effective_message.reply_text("No pending scheduled messages for this chat.")
             return
             
-        text = "<b>Scheduled Messages:</b>\n\n"
+        text = "📅 <b>Scheduled Messages:</b>\n\n"
         for row_id, send_at, msg in rows:
-            preview = msg[:30] + "..."if len(msg) > 30 else msg
+            preview = msg[:30] + "..." if len(msg) > 30 else msg
             text += f"• ID: <code>{row_id}</code> | At: {send_at} | <i>{preview}</i>\n"
             
         await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -124,7 +124,7 @@ async def cancel_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.execute("UPDATE scheduled_messages SET sent = 2 WHERE id = ?", (schedule_id,))
         await db.commit()
         
-        await update.effective_message.reply_text(f"Cancelled scheduled message ID {schedule_id}.")
+        await update.effective_message.reply_text(f"✅ Cancelled scheduled message ID {schedule_id}.")
     except Exception as e:
         logger.error(f"Error cancelling schedule: {e}")
         await update.effective_message.reply_text("Failed to cancel scheduled message.")

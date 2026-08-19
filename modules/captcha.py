@@ -25,7 +25,7 @@ async def captcha_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.set_chat_setting(chat_id, 'captcha_enabled', val)
     await db.commit()
     
-    status = "enabled"if val else "disabled"
+    status = "enabled" if val else "disabled"
     await update.effective_message.reply_text(f"CAPTCHA is now {status}.", parse_mode=ParseMode.HTML)
 
 @group_only
@@ -79,7 +79,7 @@ async def captchakick_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.set_chat_setting(chat_id, 'captcha_kick', val)
     await db.commit()
     
-    status = "kick"if val else "mute"
+    status = "kick" if val else "mute"
     await update.effective_message.reply_text(f"Action on CAPTCHA timeout is now {status}.", parse_mode=ParseMode.HTML)
 
 @group_only

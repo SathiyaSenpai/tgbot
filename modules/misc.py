@@ -25,7 +25,7 @@ async def kickme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.ban_chat_member(chat_id=chat.id, user_id=user.id)
         await context.bot.unban_chat_member(chat_id=chat.id, user_id=user.id)
-        await update.effective_message.reply_text(f"{user.first_name} has kicked themselves out of the chat.")
+        await update.effective_message.reply_text(f"🚪 {user.first_name} has kicked themselves out of the chat.")
     except TelegramError as e:
         logger.error(f"Error in kickme: {e}")
         await update.effective_message.reply_text("I couldn't kick you. Make sure I have admin rights to restrict users.")
@@ -37,7 +37,7 @@ async def bam(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Please specify a user to bam.")
         return
         
-    text = f"{target_name} has been bammed! (just kidding )"
+    text = f"🔨 {target_name} has been bammed! (just kidding 😄)"
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,7 +64,7 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_info = await context.bot.get_chat(target_id)
         
-        text = f"<b>User Info</b>\n"
+        text = f"👤 <b>User Info</b>\n"
         text += f"<b>ID:</b> <code>{user_info.id}</code>\n"
         text += f"<b>First Name:</b> {user_info.first_name}\n"
         
@@ -84,8 +84,8 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
-    msg = await update.effective_message.reply_text("Pong! ")
+    msg = await update.effective_message.reply_text("Pong! 🏓")
     end_time = time.time()
     
     ping_time = round((end_time - start_time) * 1000)
-    await msg.edit_text(f"Pong! \nResponse time: {ping_time}ms")
+    await msg.edit_text(f"Pong! 🏓\nResponse time: {ping_time}ms")

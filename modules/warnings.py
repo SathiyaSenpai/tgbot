@@ -141,7 +141,7 @@ async def dwarn_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Reply to a message.")
         return
     target_id = update.effective_message.reply_to_message.from_user.id
-    reason = "".join(context.args) if context.args else ""
+    reason = " ".join(context.args) if context.args else ""
     await execute_warn(update, context, target_id, reason, delete_msg=True)
 
 @group_only

@@ -35,7 +35,7 @@ async def save_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /save <name> <content> or reply to media.", parse_mode=ParseMode.HTML)
         return
         
-    args_str = "".join(context.args)
+    args_str = " ".join(context.args)
     try:
         parsed_args = shlex.split(args_str)
     except ValueError:
@@ -73,12 +73,12 @@ async def save_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
             content = reply_msg.text or reply_msg.caption
             
         if len(parsed_args) > 1 and not content:
-            content = "".join(parsed_args[1:])
+            content = " ".join(parsed_args[1:])
     else:
         if len(parsed_args) < 2:
             await update.effective_message.reply_text("You need to specify content or reply to media.", parse_mode=ParseMode.HTML)
             return
-        content = "".join(parsed_args[1:])
+        content = " ".join(parsed_args[1:])
         
     await db.execute(
         "INSERT INTO notes (chat_id, name, content, media_type, media_id, is_private, is_admin, is_protected) VALUES (?, ?, ?, ?, ?, 0, 0, 0) "
@@ -120,7 +120,7 @@ async def send_note(update: Update, context: ContextTypes.DEFAULT_TYPE, name: st
         
     is_private = await db.get_chat_setting(chat_id, "privatenotes", "0")
     
-    if is_private == "1"and update.effective_chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+    if is_private == "1" and update.effective_chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
         bot_username = context.bot.username
         markup = InlineKeyboardMarkup([[InlineKeyboardButton("View in PM", url=f"https://t.me/{bot_username}?start=note_{chat_id}_{name}")]])
         await update.effective_message.reply_text(f"Note <b>{name}</b>:", reply_markup=markup, parse_mode=ParseMode.HTML)

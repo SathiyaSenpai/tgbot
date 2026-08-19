@@ -30,7 +30,7 @@ async def addrepo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     repo_str = context.args[0]
-    if "/"not in repo_str:
+    if "/" not in repo_str:
         await update.effective_message.reply_text("Invalid format. Use <owner/repo>")
         return
         
@@ -44,7 +44,7 @@ async def addrepo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             (owner, repo, branch, update.effective_user.id)
         )
         await db.commit()
-        await update.effective_message.reply_text(f"Now tracking <b>{owner}/{repo}</b> on branch <b>{branch}</b>.", parse_mode=ParseMode.HTML)
+        await update.effective_message.reply_text(f"✅ Now tracking <b>{owner}/{repo}</b> on branch <b>{branch}</b>.", parse_mode=ParseMode.HTML)
     except Exception as e:
         logger.error(f"Error adding repo: {e}")
         await update.effective_message.reply_text("Failed to add repository to tracking list.")
@@ -56,7 +56,7 @@ async def rmrepo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     repo_str = context.args[0]
-    if "/"not in repo_str:
+    if "/" not in repo_str:
         await update.effective_message.reply_text("Invalid format. Use <owner/repo>")
         return
         
@@ -71,7 +71,7 @@ async def rmrepo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("DELETE FROM commit_subscribers WHERE repo_id = ?", (repo_id,))
             await db.execute("DELETE FROM tracked_repos WHERE id = ?", (repo_id,))
             await db.commit()
-            await update.effective_message.reply_text(f"️ Removed <b>{owner}/{repo}</b> from tracking.", parse_mode=ParseMode.HTML)
+            await update.effective_message.reply_text(f"🗑️ Removed <b>{owner}/{repo}</b> from tracking.", parse_mode=ParseMode.HTML)
         else:
             await update.effective_message.reply_text("Repository not found in tracking list.")
     except Exception as e:
@@ -86,7 +86,7 @@ async def repos(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.effective_message.reply_text("No repositories are currently being tracked.")
             return
             
-        text = "<b>Tracked Repositories:</b>\n\n"
+        text = "📦 <b>Tracked Repositories:</b>\n\n"
         for owner, repo, branch in rows:
             text += f"• <code>{owner}/{repo}</code> (<i>{branch}</i>)\n"
             
@@ -104,7 +104,7 @@ async def setbranch(update: Update, context: ContextTypes.DEFAULT_TYPE):
     repo_str = context.args[0]
     branch = context.args[1]
     
-    if "/"not in repo_str:
+    if "/" not in repo_str:
         await update.effective_message.reply_text("Invalid format. Use <owner/repo>")
         return
         
@@ -117,7 +117,7 @@ async def setbranch(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await db.execute("UPDATE tracked_repos SET branch = ? WHERE id = ?", (branch, row[0]))
             await db.execute("DELETE FROM repo_cache WHERE repo_id = ?", (row[0],)) # Clear cache to fetch new branch
             await db.commit()
-            await update.effective_message.reply_text(f"Branch for <b>{owner}/{repo}</b> set to <b>{branch}</b>.", parse_mode=ParseMode.HTML)
+            await update.effective_message.reply_text(f"✅ Branch for <b>{owner}/{repo}</b> set to <b>{branch}</b>.", parse_mode=ParseMode.HTML)
         else:
             await update.effective_message.reply_text("Repository not found in tracking list.")
     except Exception as e:
@@ -130,7 +130,7 @@ async def commits(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     repo_str = context.args[0]
-    if "/"not in repo_str:
+    if "/" not in repo_str:
         await update.effective_message.reply_text("Invalid format. Use <owner/repo>")
         return
         
@@ -151,7 +151,7 @@ async def commits(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.effective_message.reply_text("Could not fetch commits or no recent commits found.")
             return
             
-        text = f"<b>Latest commits for {owner}/{repo} @ {branch}:</b>\n\n"
+        text = f"🔄 <b>Latest commits for {owner}/{repo} @ {branch}:</b>\n\n"
         for commit in commits_data[:5]: # show last 5
             text += github.format_commit(commit) + "\n"
             
@@ -169,7 +169,7 @@ async def trackme(update: Update, context: ContextTypes.DEFAULT_TYPE):
             (user_id,)
         )
         await db.commit()
-        await update.effective_message.reply_text("You are now subscribed to all commit notifications.")
+        await update.effective_message.reply_text("✅ You are now subscribed to all commit notifications.")
     except Exception as e:
         logger.error(f"Error subscribing user {user_id}: {e}")
         await update.effective_message.reply_text("Failed to subscribe.")
@@ -180,7 +180,7 @@ async def untrackme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await db.execute("DELETE FROM commit_subscribers WHERE user_id = ? AND repo_id = 0", (user_id,))
         await db.commit()
-        await update.effective_message.reply_text("You have been unsubscribed from commit notifications.")
+        await update.effective_message.reply_text("🚫 You have been unsubscribed from commit notifications.")
     except Exception as e:
         logger.error(f"Error unsubscribing user {user_id}: {e}")
         await update.effective_message.reply_text("Failed to unsubscribe.")
@@ -194,7 +194,7 @@ async def trackers(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.effective_message.reply_text("No one is currently subscribed to commit notifications.")
             return
             
-        text = "<b>Commit Subscribers:</b>\n"
+        text = "👥 <b>Commit Subscribers:</b>\n"
         for row in rows:
             text += f"• <code>{row[0]}</code>\n"
         await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -219,7 +219,7 @@ async def pollinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 job.schedule_removal()
         context.job_queue.run_repeating(check_all_repos, interval=minutes * 60, first=0, name="check_all_repos")
         
-        await update.effective_message.reply_text(f"Polling interval set to {minutes} minutes. Note: This will reset on bot restart unless saved to config.", parse_mode=ParseMode.HTML)
+        await update.effective_message.reply_text(f"✅ Polling interval set to {minutes} minutes. Note: This will reset on bot restart unless saved to config.", parse_mode=ParseMode.HTML)
     except ValueError:
         await update.effective_message.reply_text("Please provide a valid positive integer for minutes.")
     except Exception as e:
@@ -227,7 +227,7 @@ async def pollinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_required
 async def checkasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.effective_message.reply_text("Initiating manual ASB check...")
+    await update.effective_message.reply_text("🔄 Initiating manual ASB check...")
     context.job_queue.run_once(check_all_repos, 0)
 
 async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
@@ -265,7 +265,7 @@ async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
             
             for commit in new_commits:
                 msg = (
-                    f"New commit in <b>{owner}/{repo}</b> @ {branch}\n\n"
+                    f"🔔 New commit in <b>{owner}/{repo}</b> @ {branch}\n\n"
                     f"{github.format_commit(commit)}"
                 )
                 
@@ -281,11 +281,11 @@ async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
                     user_id = sub[0]
                     try:
                         await context.bot.send_message(chat_id=user_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-                        if asb_updated and "android_build"in repo.lower():
+                        if asb_updated and "android_build" in repo.lower():
                             asb_msg = (
-                                f"<b>SECURITY PATCH UPDATE</b>\n"
-                                f"{owner}/{repo} @ {branch}\n"
-                                f"{last_security_patch or 'Unknown'} → {new_patch_date}"
+                                f"🔒 <b>SECURITY PATCH UPDATE</b>\n"
+                                f"📦 {owner}/{repo} @ {branch}\n"
+                                f"📅 {last_security_patch or 'Unknown'} → {new_patch_date}"
                             )
                             await context.bot.send_message(chat_id=user_id, text=asb_msg, parse_mode=ParseMode.HTML)
                     except TelegramError as e:

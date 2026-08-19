@@ -33,7 +33,7 @@ async def set_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /filter <trigger> <response> or reply to media.", parse_mode=ParseMode.HTML)
         return
         
-    args_str = "".join(context.args)
+    args_str = " ".join(context.args)
     try:
         parsed_args = shlex.split(args_str)
     except ValueError:
@@ -80,12 +80,12 @@ async def set_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = reply_msg.text or reply_msg.caption
             
         if len(parsed_args) > 1 and not response:
-            response = "".join(parsed_args[1:])
+            response = " ".join(parsed_args[1:])
     else:
         if len(parsed_args) < 2:
             await update.effective_message.reply_text("You need to specify a response or reply to media.", parse_mode=ParseMode.HTML)
             return
-        response = "".join(parsed_args[1:])
+        response = " ".join(parsed_args[1:])
         
     await db.execute(
         "INSERT INTO filters (chat_id, trigger_text, match_mode, response, media_type, media_id) VALUES (?, ?, ?, ?, ?, ?) "
@@ -125,7 +125,7 @@ async def stop_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /stop <trigger>", parse_mode=ParseMode.HTML)
         return
         
-    args_str = "".join(context.args)
+    args_str = " ".join(context.args)
     try:
         parsed_args = shlex.split(args_str)
         trigger = parsed_args[0].lower()
@@ -166,11 +166,11 @@ async def filter_scanner(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mode = row["match_mode"]
         
         match = False
-        if mode == "exact"and text == trigger:
+        if mode == "exact" and text == trigger:
             match = True
-        elif mode == "prefix"and text.startswith(trigger):
+        elif mode == "prefix" and text.startswith(trigger):
             match = True
-        elif mode == "contains"and trigger in text:
+        elif mode == "contains" and trigger in text:
             match = True
             
         if match:

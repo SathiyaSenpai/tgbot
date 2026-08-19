@@ -68,7 +68,7 @@ async def disabled_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     cmds = [row[0] for row in rows]
-    text = "<b>Disabled Commands:</b>\n"+ "\n".join(f"- <code>{c}</code>"for c in cmds)
+    text = "<b>Disabled Commands:</b>\n" + "\n".join(f"- <code>{c}</code>" for c in cmds)
     
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -86,12 +86,12 @@ async def disabledel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.set_chat_setting(chat_id, 'disabledel', val)
     await db.commit()
     
-    status = "enabled"if val else "disabled"
+    status = "enabled" if val else "disabled"
     await update.effective_message.reply_text(f"Auto-delete for disabled commands is now {status}.", parse_mode=ParseMode.HTML)
 
 @group_only
 async def cmds_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "<b>Disableable Commands:</b>\n"+ "\n".join(f"- <code>{c}</code>"for c in DISABLEABLE_COMMANDS)
+    text = "<b>Disableable Commands:</b>\n" + "\n".join(f"- <code>{c}</code>" for c in DISABLEABLE_COMMANDS)
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAULT_TYPE):

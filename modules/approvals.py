@@ -79,7 +79,7 @@ async def approval_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         (chat_id, target_user)
     )
     
-    status = "is approved"if is_approved else "is not approved"
+    status = "is approved" if is_approved else "is not approved"
     await update.effective_message.reply_text(f"User {mention_html(target_user, target_name)} {status}.", parse_mode=ParseMode.HTML)
 
 @group_only

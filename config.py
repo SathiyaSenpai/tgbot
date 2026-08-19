@@ -19,7 +19,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 # How often to poll GitHub for new commits (in minutes)
 COMMIT_POLL_INTERVAL = int(os.getenv("COMMIT_POLL_INTERVAL", "5"))
 
-DB_PATH = os.getenv("DB_PATH", str(Path(__file__).parent / "data"/ "bot.db"))
+DB_PATH = os.getenv("DB_PATH", str(Path(__file__).parent / "data" / "bot.db"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
@@ -35,6 +35,6 @@ def validate_config():
         errors.append("OWNER_ID is not set. Get your Telegram user ID from @userinfobot")
     if errors:
         for error in errors:
-            print(f"CONFIG ERROR: {error}")
+            print(f"❌ CONFIG ERROR: {error}")
         print("\nPlease set these values in your .env file.")
         raise SystemExit(1)

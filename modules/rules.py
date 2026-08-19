@@ -30,7 +30,7 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     privaterules = await db.get_chat_setting(chat_id, "rules_private", "1")
     
     if privaterules == "1":
-        button_text = await db.get_chat_setting(chat_id, "rules_button_text", "Read Rules")
+        button_text = await db.get_chat_setting(chat_id, "rules_button_text", "📜 Read Rules")
         bot_username = context.bot.username
         markup = InlineKeyboardMarkup([[InlineKeyboardButton(button_text, url=f"https://t.me/{bot_username}?start=rules_{chat_id}")]])
         await update.effective_message.reply_text("Click the button below to read the rules.", reply_markup=markup)
@@ -99,7 +99,7 @@ async def set_rules_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /setrulesbutton <text>", parse_mode=ParseMode.HTML)
         return
         
-    button_text = "".join(context.args)
+    button_text = " ".join(context.args)
     
     await db.set_chat_setting(chat_id, "rules_button_text", button_text)
     await db.commit()
