@@ -108,7 +108,7 @@ class GitHubClient:
             )
             if response.status_code == 200:
                 return response.text
-            logger.warning(f"[{owner}/{repo}] File {path} not found: {response.status_code}")
+            logger.debug(f"[{owner}/{repo}] File {path} not found: {response.status_code}")
             return None
         except Exception as e:
             logger.error(f"[{owner}/{repo}] Failed to get file {path}: {e}")
