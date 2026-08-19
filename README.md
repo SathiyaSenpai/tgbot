@@ -148,7 +148,6 @@ sudo journalctl -u senpais-bot -f
 | `/trackme` | Subscribe to notifications |
 | `/untrackme` | Unsubscribe |
 | `/commits <owner/repo>` | Manual check |
-| `/checkasb` | Check security patch level |
 
 ### Other
 | Command | Description |

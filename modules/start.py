@@ -189,8 +189,7 @@ HELP_CATEGORIES = {
             "/setbranch - Change branch\n"
             "/commits - Fetch commits\n"
             "/trackme - Subscribe\n"
-            "/untrackme - Unsubscribe\n"
-            "/checkasb - Check security patch"
+            "/untrackme - Unsubscribe"
         ),
     },
     "schedule": {

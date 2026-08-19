@@ -9,15 +9,6 @@ from utils.decorators import admin_required, owner_required
 
 logger = logging.getLogger(__name__)
 
-ASB_SOURCES = {
-    "LineageOS": {
-        "23.2": "lineage-23.2",
-    },
-    "crdroidandroid": {
-        "16.0": "16.0",
-    },
-}
-
 
 def register(app):
     app.add_handler(CommandHandler("addrepo", addrepo), group=0)
@@ -29,12 +20,8 @@ def register(app):
     app.add_handler(CommandHandler("untrackme", untrackme), group=0)
     app.add_handler(CommandHandler("trackers", trackers), group=0)
     app.add_handler(CommandHandler("pollinterval", pollinterval), group=0)
-    app.add_handler(CommandHandler("checkasb", checkasb), group=0)
-    app.add_handler(CommandHandler("addasb", addasb), group=0)
-    app.add_handler(CommandHandler("rmasb", rmasb), group=0)
 
     app.job_queue.run_repeating(check_all_repos, interval=COMMIT_POLL_INTERVAL * 60, first=30)
-    app.job_queue.run_repeating(check_asb_job, interval=COMMIT_POLL_INTERVAL * 60, first=60, name="check_asb")
 
 
 @admin_required
@@ -244,182 +231,18 @@ async def pollinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if minutes < 1:
             raise ValueError()
 
-        for name in ["check_all_repos", "check_asb"]:
-            jobs = context.job_queue.get_jobs_by_name(name)
+        jobs = context.job_queue.get_jobs_by_name("check_all_repos")
+        if jobs:
             for job in jobs:
                 job.schedule_removal()
 
         context.job_queue.run_repeating(check_all_repos, interval=minutes * 60, first=0, name="check_all_repos")
-        context.job_queue.run_repeating(check_asb_job, interval=minutes * 60, first=0, name="check_asb")
 
         await update.effective_message.reply_text(f"✅ Polling interval set to {minutes} minutes.", parse_mode=ParseMode.HTML)
     except ValueError:
         await update.effective_message.reply_text("Please provide a valid positive integer for minutes.")
     except Exception as e:
         logger.error(f"Error setting poll interval: {e}")
-
-
-@owner_required
-async def addasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Add a ROM org + branch to ASB tracking. Usage: /addasb <org> <branch>"""
-    if len(context.args) < 2:
-        await update.effective_message.reply_text("Usage: /addasb <org> <branch>\nExample: /addasb LineageOS lineage-23.2")
-        return
-
-    org, branch = context.args[0], context.args[1]
-    db = context.bot_data["db"]
-
-    try:
-        await db.execute(
-            "INSERT OR IGNORE INTO asb_sources (org, branch) VALUES (?, ?)",
-            (org, branch)
-        )
-        await db.commit()
-        await update.effective_message.reply_text(f"✅ Now tracking ASB for <b>{org}</b> on branch <b>{branch}</b>.", parse_mode=ParseMode.HTML)
-    except Exception as e:
-        logger.error(f"Error adding ASB source: {e}")
-        await update.effective_message.reply_text("Failed to add ASB source.")
-
-
-@owner_required
-async def rmasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Remove a ROM org + branch from ASB tracking."""
-    if len(context.args) < 2:
-        await update.effective_message.reply_text("Usage: /rmasb <org> <branch>")
-        return
-
-    org, branch = context.args[0], context.args[1]
-    db = context.bot_data["db"]
-
-    try:
-        await db.execute("DELETE FROM asb_sources WHERE org = ? AND branch = ?", (org, branch))
-        await db.commit()
-        await update.effective_message.reply_text(f"🗑️ Removed ASB tracking for <b>{org}</b> ({branch}).", parse_mode=ParseMode.HTML)
-    except Exception as e:
-        logger.error(f"Error removing ASB source: {e}")
-        await update.effective_message.reply_text("Failed to remove ASB source.")
-
-
-async def checkasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Fetch bleeding-edge platform security patch levels and device tree updates."""
-    msg = await update.effective_message.reply_text("Fetching security & tree updates...")
-    db = context.bot_data.get("db")
-    github = context.bot_data.get("github")
-
-    if not db or not github:
-        await msg.edit_text("GitHub client not initialized.")
-        return
-
-    try:
-        sections = []
-
-        # 1. Platform ASB (Google / LineageOS / crDroid)
-        asb_lines = []
-        p_22 = await github.check_asb("LineageOS", "lineage-22.2")
-        if p_22:
-            asb_lines.append(f"• <b>LineageOS 22.2 (Active):</b> <code>{p_22}</code>")
-        p_24 = await github.check_asb("LineageOS", "lineage-24.0")
-        if p_24:
-            asb_lines.append(f"• <b>LineageOS 24.0 (Bleeding):</b> <code>{p_24}</code>")
-        p_cr = await github.check_asb("crdroidandroid", "16.0")
-        if p_cr:
-            asb_lines.append(f"• <b>crDroid 16.0:</b> <code>{p_cr}</code>")
-
-        if asb_lines:
-            sections.append("🛡️ <b>Platform Security Patch (ASB):</b>\n" + "\n".join(asb_lines))
-
-        # 2. OnePlus SM8650 Device Trees (Gerrit)
-        dev_updates = await github.fetch_device_tree_updates(limit=4)
-        if dev_updates:
-            dev_lines = []
-            for d in dev_updates:
-                r_short = d['repo'].replace('android_device_oneplus_', '')
-                dev_lines.append(f"• <b>{r_short}</b> (<i>{d['branch']}</i>): {d['subject']} [<code>{d['updated']}</code>]")
-            sections.append("📱 <b>Device Trees & Firmware Drops (Gerrit):</b>\n" + "\n".join(dev_lines))
-
-        # 3. Qualcomm & Vendor Blobs Summary
-        vendor_info = (
-            "⚡ <b>Hardware & Vendor Blobs:</b>\n"
-            "• <b>Qualcomm / CodeLinaro:</b> SM8650 SoC Kernel & Hardware Trees\n"
-            "• <b>TheMuppets:</b> Proprietary vendor blobs (OOS/COS OTA firmware dumps)"
-        )
-        sections.append(vendor_info)
-
-        final_text = "🔒 <b>Security & Bleeding-Edge Updates:</b>\n\n" + "\n\n".join(sections)
-        await msg.edit_text(final_text, parse_mode=ParseMode.HTML)
-
-    except Exception as e:
-        logger.error(f"Error checking ASB & trees: {e}")
-        await msg.edit_text("Failed to check security patch & tree levels.")
-
-
-async def check_asb_job(context: ContextTypes.DEFAULT_TYPE):
-    """Background job: check for new security patches and device tree merges, then DM owner."""
-    db = context.bot_data.get("db")
-    github = context.bot_data.get("github")
-
-    if not db or not github:
-        return
-
-    try:
-        # 1. Check Platform ASB bumps
-        for org, branch in [("LineageOS", "lineage-22.2"), ("LineageOS", "lineage-24.0"), ("crdroidandroid", "16.0")]:
-            patch_date = await github.check_asb(org, branch)
-            if not patch_date:
-                continue
-
-            cache_key = f"asb_{org}_{branch}"
-            cached = await db.fetchval("SELECT value FROM bot_kv WHERE key = ?", (cache_key,))
-
-            if cached != patch_date:
-                await db.execute(
-                    "INSERT INTO bot_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
-                    (cache_key, patch_date, patch_date)
-                )
-                await db.commit()
-
-                if cached is not None:
-                    msg = (
-                        f"🔒 <b>New Security Patch Detected!</b>\n\n"
-                        f"<b>{org}</b> ({branch})\n"
-                        f"Previous: <code>{cached}</code>\n"
-                        f"New: <code>{patch_date}</code>"
-                    )
-                    try:
-                        await context.bot.send_message(chat_id=OWNER_ID, text=msg, parse_mode=ParseMode.HTML)
-                    except TelegramError as e:
-                        logger.error(f"Failed to DM owner about ASB update: {e}")
-
-        # 2. Check Device Tree Merges on Gerrit (sm8650-common, avalon, audi)
-        dev_updates = await github.fetch_device_tree_updates(limit=5)
-        for d in dev_updates:
-            cid = str(d.get("id"))
-            cache_key = f"gerrit_tree_{cid}"
-            seen = await db.fetchval("SELECT value FROM bot_kv WHERE key = ?", (cache_key,))
-            if not seen:
-                await db.execute(
-                    "INSERT INTO bot_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
-                    (cache_key, d.get("updated", ""), d.get("updated", ""))
-                )
-                await db.commit()
-
-                # If bot_kv already has other records, alert on new merge
-                count = await db.fetchval("SELECT count(*) FROM bot_kv WHERE key LIKE 'gerrit_tree_%'")
-                if count > 5:
-                    r_short = d['repo'].replace('android_device_oneplus_', '')
-                    alert = (
-                        f"📱 <b>New Device Tree Merge (Gerrit)!</b>\n\n"
-                        f"<b>{r_short}</b> @ {d['branch']}\n"
-                        f"📝 {d['subject']}\n"
-                        f"📅 {d['updated']}"
-                    )
-                    try:
-                        await context.bot.send_message(chat_id=OWNER_ID, text=alert, parse_mode=ParseMode.HTML)
-                    except TelegramError as e:
-                        logger.error(f"Failed to DM owner about tree update: {e}")
-
-    except Exception as e:
-        logger.error(f"Error in ASB & device check job: {e}")
 
 
 async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):

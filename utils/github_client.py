@@ -2,15 +2,12 @@
 Senpai's Bot - GitHub API Client
 Async client for polling commits with ETag caching.
 """
-import re
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 import httpx
 
 logger = logging.getLogger(__name__)
-
-SECURITY_PATCH_REGEX = re.compile(r"PLATFORM_SECURITY_PATCH\s*:=\s*(\d{4}-\d{2}-\d{2})")
 
 
 class GitHubClient:
@@ -127,137 +124,6 @@ class GitHubClient:
             logger.debug(f"[{owner}/{repo}] Failed to get file {path}: {e}")
             return None
 
-    async def check_asb(self, org: str, branch: str) -> Optional[str]:
-        """Fetch the security patch level for a ROM org.
-        
-        Tries these sources in order:
-        1. LineageOS Gerrit REST API (for LineageOS org - gets real-time merged security patches)
-        2. android_build_release flag_values on GitHub
-        3. core/build_id.mk date parsing (for crDroid and others)
-        4. Legacy version_defaults.mk
-        """
-        # 1. LineageOS Gerrit REST API
-        if org.lower() == "lineageos":
-            try:
-                # Query for specific branch or general latest security bump
-                query = f"project:LineageOS/android_build_release+status:merged+message:\"Bump Security String\"+branch:{branch}"
-                gerrit_url = f"https://review.lineageos.org/changes/?q={query}&n=3"
-                resp = await self._client.get(gerrit_url)
-                if resp.status_code == 200:
-                    text = resp.text
-                    if text.startswith(")]}'"):
-                        text = text[4:].strip()
-                    import json
-                    changes = json.loads(text)
-                    for c in changes:
-                        match = re.search(r"(\d{4}-\d{2}-\d{2})", c.get("subject", ""))
-                        if match:
-                            return match.group(1)
-            except Exception as e:
-                logger.debug(f"Gerrit check failed for {org}/{branch}: {e}")
-
-        # 2. Figure out the build tag prefix from the BUILD_ID
-        build_id = await self.get_file_content(org, "android_build", "core/build_id.mk", branch)
-        tag = None
-        if build_id:
-            for line in build_id.splitlines():
-                if line.startswith("BUILD_ID="):
-                    tag = line.split("=", 1)[1].strip().split(".")[0].lower()
-                    break
-
-        # Try the release flag file first (LineageOS GitHub)
-        if tag:
-            content = await self.get_file_content(
-                org, "android_build_release",
-                f"flag_values/{tag}/RELEASE_PLATFORM_SECURITY_PATCH.textproto",
-                branch,
-            )
-            if content:
-                match = re.search(r'string_value:\s*"(\d{4}-\d{2}-\d{2})"', content)
-                if match:
-                    return match.group(1)
-
-        # 3. Fallback: parse date from BUILD_ID itself (e.g. BP1A.250505.005 -> 2025-05-05)
-        if build_id:
-            for line in build_id.splitlines():
-                if line.startswith("BUILD_ID="):
-                    bid = line.split("=", 1)[1].strip()
-                    parts = bid.split(".")
-                    if len(parts) >= 2 and len(parts[1]) == 6:
-                        try:
-                            raw = parts[1]
-                            year = 2000 + int(raw[:2])
-                            month = int(raw[2:4])
-                            day = int(raw[4:6])
-                            return f"{year}-{month:02d}-{day:02d}"
-                        except ValueError:
-                            pass
-                    break
-
-        # 4. Legacy fallback: version_defaults.mk
-        content = await self.get_file_content(org, "android_build", "core/version_defaults.mk", branch)
-        if content:
-            match = SECURITY_PATCH_REGEX.search(content)
-            if match:
-                return match.group(1)
-
-        return None
-
-    async def fetch_device_tree_updates(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Fetch latest merged commits for SM8650, avalon, and audi trees from LineageOS Gerrit."""
-        try:
-            query = "(project:LineageOS/android_device_oneplus_avalon+OR+project:LineageOS/android_device_oneplus_audi+OR+project:LineageOS/android_device_oneplus_sm8650-common)+status:merged"
-            url = f"https://review.lineageos.org/changes/?q={query}&n={limit}"
-            resp = await self._client.get(url)
-            if resp.status_code == 200:
-                text = resp.text
-                if text.startswith(")]}'"):
-                    text = text[4:].strip()
-                import json
-                data = json.loads(text)
-                results = []
-                for c in data:
-                    proj = c.get("project", "").split("/")[-1]
-                    results.append({
-                        "id": c.get("id"),
-                        "repo": proj,
-                        "branch": c.get("branch"),
-                        "subject": c.get("subject"),
-                        "updated": c.get("updated", "")[:10],
-                        "number": c.get("_number"),
-                    })
-                return results
-        except Exception as e:
-            logger.debug(f"Failed to fetch device tree updates from Gerrit: {e}")
-        return []
-
-    async def fetch_gerrit_security_bumps(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Fetch latest merged security bumps across all branches from LineageOS Gerrit."""
-        try:
-            query = "project:LineageOS/android_build_release+status:merged+message:\"Bump Security String\""
-            url = f"https://review.lineageos.org/changes/?q={query}&n={limit}"
-            resp = await self._client.get(url)
-            if resp.status_code == 200:
-                text = resp.text
-                if text.startswith(")]}'"):
-                    text = text[4:].strip()
-                import json
-                data = json.loads(text)
-                results = []
-                for c in data:
-                    m = re.search(r"(\d{4}-\d{2}-\d{2})", c.get("subject", ""))
-                    if m:
-                        results.append({
-                            "patch_date": m.group(1),
-                            "branch": c.get("branch"),
-                            "subject": c.get("subject"),
-                            "updated": c.get("updated", "")[:10],
-                        })
-                return results
-        except Exception as e:
-            logger.debug(f"Failed to fetch Gerrit security bumps: {e}")
-        return []
-
     async def get_rate_limit(self) -> Dict[str, Any]:
         try:
             response = await self._client.get("/rate_limit")
@@ -278,7 +144,7 @@ class GitHubClient:
     def format_commit(self, commit: dict) -> str:
         sha = commit.get("sha", "")[:7]
         commit_data = commit.get("commit", {})
-        message = commit_data.get("message", "No message").split("\n")[0]  # First line only
+        message = commit_data.get("message", "No message").split("\n")[0]
         author_data = commit_data.get("author", {})
         author_name = author_data.get("name", "Unknown")
         url = commit.get("html_url", "")
