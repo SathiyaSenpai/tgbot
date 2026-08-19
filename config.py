@@ -26,9 +26,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
 # ── GIF Support ───────────────────────────────────────────────────────────────
-# Optional. Get a free Tenor API key: https://developers.google.com/tenor/guides/quickstart
+# Optional. Get a free Tenor API key: https://developers.giphy.com
 # Without this, GIFs are disabled (bot still works fine).
-TENOR_API_KEY = os.getenv("TENOR_API_KEY", "")
+GIPHY_API_KEY = os.getenv("GIPHY_API_KEY", "")
 
 # How often to poll GitHub for new commits (in minutes)
 COMMIT_POLL_INTERVAL = int(os.getenv("COMMIT_POLL_INTERVAL", "5"))
@@ -66,8 +66,8 @@ def validate_config():
             active.append("OpenRouter")
         print(f"✓ AI providers enabled: {', '.join(active)}")
 
-    if not TENOR_API_KEY:
-        warnings.append("TENOR_API_KEY not set — GIF sending disabled (optional).")
+    if not GIPHY_API_KEY:
+        warnings.append("GIPHY_API_KEY not set — GIF sending disabled (optional).")
 
     if warnings:
         for w in warnings:

@@ -9,7 +9,7 @@ from telegram.ext import ContextTypes
 from telegram.error import TelegramError
 
 from modules.ai_engine import generate_reply, pick_gif_query
-from config import TENOR_API_KEY
+from config import GIPHY_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
                 _increment_count(chat_id)
 
                 # Very rarely add a GIF to a spontaneous message too (5% chance)
-                if send_gif and TENOR_API_KEY and random.random() < 0.05:
+                if send_gif and GIPHY_API_KEY and random.random() < 0.05:
                     from modules.ai_chat import fetch_gif
                     gif_query = pick_gif_query(reply_text)
                     gif_url = await fetch_gif(gif_query)

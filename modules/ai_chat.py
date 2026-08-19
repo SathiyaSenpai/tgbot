@@ -10,7 +10,7 @@ from telegram import Update
 from telegram.ext import MessageHandler, filters, ContextTypes
 from telegram.constants import ChatType
 
-from config import GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, TENOR_API_KEY
+from config import GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, GIPHY_API_KEY
 from modules.ai_engine import (
     init_gemini, init_groq, init_openrouter,
     generate_reply, pick_gif_query,
@@ -44,12 +44,12 @@ def register(app):
 
 async def fetch_gif(query: str) -> str | None:
     """Fetch a contextually appropriate GIF URL from Tenor."""
-    if not TENOR_API_KEY:
+    if not GIPHY_API_KEY:
         return None
     try:
         params = {
             "q": query,
-            "key": TENOR_API_KEY,
+            "key": GIPHY_API_KEY,
             "limit": 10,
             "contentfilter": "medium",
             "media_filter": "gif",
@@ -113,7 +113,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text(reply_text)
 
         # Optionally send a contextually relevant GIF
-        if send_gif and TENOR_API_KEY:
+        if send_gif and GIPHY_API_KEY:
             gif_query = pick_gif_query(user_text + " " + reply_text)
             gif_url = await fetch_gif(gif_query)
             if gif_url:
