@@ -61,6 +61,7 @@ async def rmrepo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     owner, repo = repo_str.split("/", 1)
+    branch = context.args[1] if len(context.args) > 1 else None
     db = context.bot_data["db"]
     
     try:
@@ -109,6 +110,7 @@ async def setbranch(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     owner, repo = repo_str.split("/", 1)
+    branch = context.args[1] if len(context.args) > 1 else None
     db = context.bot_data["db"]
     
     try:
@@ -135,6 +137,7 @@ async def commits(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     owner, repo = repo_str.split("/", 1)
+    branch = context.args[1] if len(context.args) > 1 else None
     db = context.bot_data["db"]
     github = context.bot_data.get("github")
     
@@ -143,16 +146,24 @@ async def commits(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     try:
-        row = await db.fetchone("SELECT branch FROM tracked_repos WHERE owner = ? AND repo = ?", (owner, repo))
-        branch = row[0] if row else "main"
+        if not branch:
+            row = await db.fetchone("SELECT branch FROM tracked_repos WHERE owner = ? AND repo = ?", (owner, repo))
+            branch = row[0] if row else "main"
         
-        commits_data = await github.get_commits(owner, repo, branch)
-        if not commits_data or getattr(commits_data, 'status', 200) == 304:
+        data = await github.get_commits(owner, repo, branch)
+        status = data.get('status', 0)
+        commits_list = data.get('commits', [])
+        
+        if status == 404:
+            await update.effective_message.reply_text(f'Repository or branch not found (tried branch: {branch}).')
+            return
+            
+        if not commits_list or status == 304:
             await update.effective_message.reply_text("Could not fetch commits or no recent commits found.")
             return
             
         text = f"🔄 <b>Latest commits for {owner}/{repo} @ {branch}:</b>\n\n"
-        for commit in commits_data[:5]: # show last 5
+        for commit in commits_list[:5]: # show last 5
             text += github.format_commit(commit) + "\n"
             
         await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
@@ -227,8 +238,37 @@ async def pollinterval(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_required
 async def checkasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.effective_message.reply_text("🔄 Initiating manual ASB check...")
-    context.job_queue.run_once(check_all_repos, 0)
+    msg = await update.effective_message.reply_text("Checking Security Patch levels for tracked repos...")
+    db = context.bot_data.get("db")
+    github = context.bot_data.get("github")
+    
+    if not db or not github:
+        await msg.edit_text("Database or GitHub client not initialized.")
+        return
+        
+    try:
+        repos = await db.fetchall("SELECT owner, repo, branch FROM tracked_repos")
+        if not repos:
+            await msg.edit_text("No repositories are currently tracked. Use /addrepo to add some.")
+            return
+            
+        results = []
+        for owner, repo, branch in repos:
+            patch_date = await github.check_security_patch(owner, repo, branch)
+            if patch_date:
+                results.append(f"<b>{owner}/{repo}</b> ({branch}): <code>{patch_date}</code>")
+            else:
+                results.append(f"<b>{owner}/{repo}</b> ({branch}): <i>No patch file found</i>")
+                
+        final_text = "<b>Android Security Patch Levels:</b>\n\n" + "\n".join(results)
+        await msg.edit_text(final_text, parse_mode=ParseMode.HTML)
+        
+        # Also trigger a manual commit check in the background just in case
+        context.job_queue.run_once(check_all_repos, 0)
+        
+    except Exception as e:
+        logger.error(f"Error checking ASB: {e}")
+        await msg.edit_text("Failed to check ASB levels due to an error.")
 
 async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data.get("db")
@@ -246,13 +286,15 @@ async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
             last_sha = cache[1] if cache else None
             last_security_patch = cache[2] if cache else None
             
-            commits_data = await github.get_commits(owner, repo, branch, etag=cached_etag)
+            data = await github.get_commits(owner, repo, branch, etag=cached_etag)
+            status = data.get('status', 0)
+            commits_list = data.get('commits', [])
             
-            if not commits_data or getattr(commits_data, 'status', 200) == 304:
+            if not commits_list or status == 304:
                 continue
                 
             new_commits = []
-            for commit in commits_data:
+            for commit in commits_list:
                 if commit.get("sha") == last_sha:
                     break
                 new_commits.append(commit)
@@ -292,7 +334,7 @@ async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):
                         logger.error(f"Failed to send commit notification to {user_id}: {e}")
             
             new_last_sha = new_commits[-1].get("sha") if new_commits else last_sha
-            new_etag = getattr(commits_data, 'headers', {}).get('ETag', cached_etag)
+            new_etag = data.get('etag', cached_etag)
             
             if cache:
                 await db.execute(
