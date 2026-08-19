@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 ASB_SOURCES = {
     "LineageOS": {
-        "22.2": "lineage-22.2",
         "23.2": "lineage-23.2",
     },
     "crdroidandroid": {

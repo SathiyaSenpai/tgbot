@@ -100,18 +100,31 @@ class GitHubClient:
     async def get_file_content(
         self, owner: str, repo: str, path: str, branch: str = "main"
     ) -> Optional[str]:
+        # Fast path: raw.githubusercontent.com (no rate limits)
+        try:
+            raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+            headers = {"User-Agent": "SenpaisBot/1.0"}
+            if self.token:
+                headers["Authorization"] = f"token {self.token}"
+            response = await self._client.get(raw_url, headers=headers)
+            if response.status_code == 200:
+                return response.text
+        except Exception as e:
+            logger.debug(f"raw.githubusercontent failed for {owner}/{repo}/{path}: {e}")
+
+        # Fallback to standard API endpoint
         try:
             response = await self._client.get(
                 f"/repos/{owner}/{repo}/contents/{path}",
                 params={"ref": branch},
-                headers={"Accept": "application/vnd.github.raw+json"},
+                headers={"Accept": "application/vnd.github.v3.raw"},
             )
             if response.status_code == 200:
                 return response.text
             logger.debug(f"[{owner}/{repo}] File {path} not found: {response.status_code}")
             return None
         except Exception as e:
-            logger.error(f"[{owner}/{repo}] Failed to get file {path}: {e}")
+            logger.debug(f"[{owner}/{repo}] Failed to get file {path}: {e}")
             return None
 
     async def check_asb(self, org: str, branch: str) -> Optional[str]:
