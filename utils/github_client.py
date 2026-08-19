@@ -114,17 +114,59 @@ class GitHubClient:
             logger.error(f"[{owner}/{repo}] Failed to get file {path}: {e}")
             return None
 
-    async def check_security_patch(
-        self, owner: str, repo: str, branch: str = "main"
-    ) -> Optional[str]:
-        content = await self.get_file_content(
-            owner, repo, "core/version_defaults.mk", branch
-        )
-        if not content:
-            return None
+    async def check_asb(self, org: str, branch: str) -> Optional[str]:
+        """Fetch the security patch level for a ROM org.
+        
+        Tries these sources in order:
+        1. android_build_release flag_values (LineageOS)
+        2. core/build_id.mk date parsing (crDroid and others)
+        """
+        # Figure out the build tag prefix from the BUILD_ID
+        build_id = await self.get_file_content(org, "android_build", "core/build_id.mk", branch)
+        tag = None
+        if build_id:
+            for line in build_id.splitlines():
+                if line.startswith("BUILD_ID="):
+                    tag = line.split("=", 1)[1].strip().split(".")[0].lower()
+                    break
 
-        match = SECURITY_PATCH_REGEX.search(content)
-        return match.group(1) if match else None
+        # Try the release flag file first (LineageOS style)
+        if tag:
+            content = await self.get_file_content(
+                org, "android_build_release",
+                f"flag_values/{tag}/RELEASE_PLATFORM_SECURITY_PATCH.textproto",
+                branch,
+            )
+            if content:
+                match = re.search(r'string_value:\s*"(\d{4}-\d{2}-\d{2})"', content)
+                if match:
+                    return match.group(1)
+
+        # Fallback: parse date from BUILD_ID itself (e.g. BP1A.250505.005 -> 2025-05-05)
+        if build_id:
+            for line in build_id.splitlines():
+                if line.startswith("BUILD_ID="):
+                    bid = line.split("=", 1)[1].strip()
+                    parts = bid.split(".")
+                    if len(parts) >= 2 and len(parts[1]) == 6:
+                        try:
+                            raw = parts[1]
+                            year = 2000 + int(raw[:2])
+                            month = int(raw[2:4])
+                            day = int(raw[4:6])
+                            return f"{year}-{month:02d}-{day:02d}"
+                        except ValueError:
+                            pass
+                    break
+
+        # Legacy fallback: version_defaults.mk
+        content = await self.get_file_content(org, "android_build", "core/version_defaults.mk", branch)
+        if content:
+            match = SECURITY_PATCH_REGEX.search(content)
+            if match:
+                return match.group(1)
+
+        return None
 
     async def get_rate_limit(self) -> Dict[str, Any]:
         try:

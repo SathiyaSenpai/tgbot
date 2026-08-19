@@ -180,6 +180,19 @@ CREATE TABLE IF NOT EXISTS commit_subscribers (
     PRIMARY KEY(user_id, repo_id)
 );
 
+-- ASB sources (ROM orgs to check for security patches)
+CREATE TABLE IF NOT EXISTS asb_sources (
+    org TEXT NOT NULL,
+    branch TEXT NOT NULL,
+    PRIMARY KEY(org, branch)
+);
+
+-- Generic key-value store for bot state
+CREATE TABLE IF NOT EXISTS bot_kv (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
 -- Scheduled messages
 CREATE TABLE IF NOT EXISTS scheduled_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
