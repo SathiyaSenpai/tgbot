@@ -111,13 +111,3 @@ def register(app):
     app.add_handler(CommandHandler("start", connect_handler, filters=filters.Regex(r'^/start connect_')), group=0)
     app.add_handler(CommandHandler("disconnect", disconnect_cmd), group=0)
     app.add_handler(CommandHandler("connection", connection_cmd), group=0)
-    
-    import sqlite3
-    try:
-        app.bot_data['db_conn'] = sqlite3.connect('/home/sathiya/.gemini/antigravity/scratch/senpais-bot/bot.db')
-        c = app.bot_data['db_conn'].cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS connections
-                     (user_id INTEGER PRIMARY KEY, chat_id INTEGER)''')
-        app.bot_data['db_conn'].commit()
-    except Exception as e:
-        logger.error(f"Error creating connections table: {e}")
