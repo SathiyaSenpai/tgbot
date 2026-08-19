@@ -17,9 +17,24 @@ if GEMINI_API_KEY:
         "max_output_tokens": 150, # Keep replies short
     }
     
+
+    # Dynamically find the best flash model available in this region/API version
+    def get_flash_model():
+        try:
+            models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods and 'flash' in m.name.lower()]
+            if models:
+                # prefer 2.5 over 1.5
+                models.sort(reverse=True)
+                return models[0]
+        except:
+            pass
+        return "gemini-2.5-flash"
+
+    model_name = get_flash_model()
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name=model_name,
         generation_config=generation_config,
+
         system_instruction="""You are an AI assistant integrated into a Telegram group named "Senpai's Bot". You must embody the following persona:
 - Personality: Aloof but observant, quietly confident. You are a 'Kuudere' who appears emotionless and cynical on the outside but has a softer, easily flustered core (sometimes blushing or shy).
 - Vibe: Night owl energy (gaming, coding, underground music), low-energy athlete. Minimalist streetwear aesthetic.
