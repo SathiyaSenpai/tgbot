@@ -16,113 +16,11 @@ logger = logging.getLogger(__name__)
 
 # Help categories with their commands
 HELP_CATEGORIES = {
-    "admin": {
-        "title": "Admin Commands",
+    "ai": {
+        "title": "AI & Chat",
         "commands": (
-            "/ban - Ban a user\n"
-            "/sban - Silent ban\n"
-            "/dban - Ban + delete message\n"
-            "/tban - Temporary ban\n"
-            "/unban - Unban user\n"
-            "/kick - Kick user\n"
-            "/skick - Silent kick\n"
-            "/dkick - Kick + delete msg\n"
-            "/promote - Promote to admin\n"
-            "/demote - Remove admin\n"
-            "/adminlist - List admins\n"
-            "/settitle - Set admin title\n"
-            "/admincache - Refresh admin cache"
-        ),
-    },
-    "mute": {
-        "title": "Mute Commands",
-        "commands": (
-            "/mute - Mute user\n"
-            "/smute - Silent mute\n"
-            "/dmute - Mute + delete msg\n"
-            "/tmute - Temporary mute\n"
-            "/unmute - Unmute user"
-        ),
-    },
-    "warn": {
-        "title": "Warning Commands",
-        "commands": (
-            "/warn - Warn user\n"
-            "/dwarn - Warn + delete msg\n"
-            "/swarn - Silent warn\n"
-            "/warns - Check warnings\n"
-            "/rmwarn - Remove last warning\n"
-            "/resetwarn - Reset warnings\n"
-            "/warnlimit - Set max warnings\n"
-            "/warnmode - Set punishment"
-        ),
-    },
-    "blocklist": {
-        "title": "Blocklist",
-        "commands": (
-            "/addblocklist - Add trigger\n"
-            "/rmblocklist - Remove trigger\n"
-            "/blocklist - List triggers\n"
-            "/blocklistmode - Set action\n"
-            "/blocklistdelete - Toggle deletion"
-        ),
-    },
-    "filters": {
-        "title": "Filters",
-        "commands": (
-            "/filter - Set filter\n"
-            "/filters - List filters\n"
-            "/stop - Remove filter\n"
-            "/stopall - Remove all"
-        ),
-    },
-    "notes": {
-        "title": "Notes",
-        "commands": (
-            "/save - Save note\n"
-            "/get or #name - Get note\n"
-            "/notes - List notes\n"
-            "/clear - Delete note\n"
-            "/privatenotes - PM toggle"
-        ),
-    },
-    "welcome": {
-        "title": "Greetings",
-        "commands": (
-            "/welcome - Toggle welcome\n"
-            "/setwelcome - Set message\n"
-            "/goodbye - Toggle goodbye\n"
-            "/setgoodbye - Set message\n"
-            "/cleanwelcome - Clean old welcomes\n"
-            "/cleanservice - Clean join/leave msgs"
-        ),
-    },
-    "rules": {
-        "title": "Rules",
-        "commands": (
-            "/rules - View rules\n"
-            "/setrules - Set rules\n"
-            "/clearrules - Clear rules\n"
-            "/privaterules - PM toggle\n"
-            "/setrulesbutton - Custom button text"
-        ),
-    },
-    "pins": {
-        "title": "Pins",
-        "commands": (
-            "/pin - Pin message\n"
-            "/unpin - Unpin message\n"
-            "/unpinall - Unpin all\n"
-            "/pinned - Get pinned msg\n"
-            "/permapin - Bot creates & pins"
-        ),
-    },
-    "purge": {
-        "title": "Purge",
-        "commands": (
-            "/purge - Delete messages\n"
-            "/spurge - Silent purge\n"
-            "/del - Delete one message"
+            "I don't need commands to talk to you. Just tag me or reply to my messages and I'll respond.\n\n"
+            "I also occasionally drop a message in the group when I feel like it."
         ),
     },
     "misc": {
@@ -132,55 +30,10 @@ HELP_CATEGORIES = {
             "/tts - Text to speech\n"
             "/id - Get IDs\n"
             "/info - User info\n"
-            "/ping - Check if alive\n"
-            "/kickme - Kick yourself\n"
-            "/bam - Fake ban"
+            "/ping - Check if alive"
         ),
     },
-    "flood": {
-        "title": "Antiflood",
-        "commands": (
-            "/flood - Show settings\n"
-            "/setflood - Set limit\n"
-            "/setfloodmode - Set action"
-        ),
-    },
-    "locks": {
-        "title": "Locks",
-        "commands": (
-            "/lock - Lock type\n"
-            "/unlock - Unlock type\n"
-            "/locks - Show locks\n"
-            "/locktypes - List types"
-        ),
-    },
-    "captcha": {
-        "title": "CAPTCHA",
-        "commands": (
-            "/captcha - Toggle CAPTCHA\n"
-            "/captchamode - Set mode\n"
-            "/captchatime - Set timeout\n"
-            "/captchakick - Kick on fail"
-        ),
-    },
-    "connect": {
-        "title": "Connection",
-        "commands": (
-            "/connect - Connect to group\n"
-            "/disconnect - Disconnect\n"
-            "/connection - Show connection"
-        ),
-    },
-    "approve": {
-        "title": "Approvals",
-        "commands": (
-            "/approve - Approve user\n"
-            "/unapprove - Remove approval\n"
-            "/approved - List approved\n"
-            "/approval - Check user"
-        ),
-    },
-    "commits": {
+    "github": {
         "title": "Commit Tracker",
         "commands": (
             "/addrepo - Track repo\n"
@@ -188,7 +41,7 @@ HELP_CATEGORIES = {
             "/repos - List tracked\n"
             "/setbranch - Change branch\n"
             "/commits - Fetch commits\n"
-            "/trackme - Subscribe\n"
+            "/trackme - Subscribe to PMs\n"
             "/untrackme - Unsubscribe"
         ),
     },
@@ -203,15 +56,11 @@ HELP_CATEGORIES = {
     "settings": {
         "title": "Settings",
         "commands": (
-            "/disable - Disable command\n"
-            "/enable - Enable command\n"
-            "/disabled - List disabled\n"
             "/setlog - Set log channel\n"
-            "/reports - Toggle reports\n"
-            "/setbotname - Change name (owner)\n"
-            "/setbotphoto - Change photo (owner)"
+            "/setbotname - Change name\n"
+            "/setbotphoto - Change photo"
         ),
-    },
+    }
 }
 
 def _build_help_keyboard(current: str = None) -> InlineKeyboardMarkup:
