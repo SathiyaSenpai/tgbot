@@ -109,6 +109,27 @@ async def get_target_user(
         return user_id, rest
 
     if USERNAME_REGEX.match(first_arg):
+        username = first_arg.lstrip("@").lower()
+        db = context.bot_data.get("db")
+        if db:
+            row = await db.fetchone("SELECT user_id FROM users WHERE LOWER(username) = ?", (username,))
+            if row:
+                return row["user_id"], rest
+        return None, rest
+
+    if return_rest:
+        return None, " ".join(args)
+
+    return None, None
+
+    first_arg = args[0]
+    rest = " ".join(args[1:]) if len(args) > 1 else None
+
+    if USER_ID_REGEX.match(first_arg):
+        user_id = int(first_arg)
+        return user_id, rest
+
+    if USERNAME_REGEX.match(first_arg):
         # Username resolution needs cache, for now return None to prompt failure
         return None, rest
 

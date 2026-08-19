@@ -94,6 +94,14 @@ async def cmds_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "<b>Disableable Commands:</b>\n" + "\n".join(f"- <code>{c}</code>" for c in DISABLEABLE_COMMANDS)
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
+
+async def user_cache_middleware(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    db = context.bot_data.get("db")
+    if user and db:
+        await db.ensure_user(user.id, user.username, user.first_name, user.last_name)
+
+
 async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if not update.effective_message or not update.effective_message.text:
@@ -130,6 +138,11 @@ async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAUL
         logger.debug(f"Error checking disabled commands: {e}")
 
 def register(app):
+
+    # Group -3 for user caching
+    from telegram.ext import TypeHandler
+    app.add_handler(TypeHandler(Update, user_cache_middleware), group=-3)
+
     # Group -2 for middleware
     app.add_handler(MessageHandler((filters.COMMAND | filters.Regex(r"^[!?]")) & filters.ChatType.GROUPS, check_disabled_middleware), group=-2)
     
