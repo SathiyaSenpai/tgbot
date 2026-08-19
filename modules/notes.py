@@ -32,11 +32,26 @@ def register(app):
         group=0
     )
 
-@group_only
 @admin_required
 async def save_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
+    if is_pm:
+        from utils.decorators import is_user_admin
+        if not await is_user_admin(chat_id, user.id, context):
+            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
+            return
+
     
     if not context.args and not update.effective_message.reply_to_message:
         await update.effective_message.reply_text("Usage: /save <name> <content> or reply to media.", parse_mode=ParseMode.HTML)
@@ -96,7 +111,6 @@ async def save_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.effective_message.reply_text(f"Note <b>{name}</b> saved.", parse_mode=ParseMode.HTML)
 
-@group_only
 async def get_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.effective_message.reply_text("Usage: /get <name>", parse_mode=ParseMode.HTML)
@@ -118,7 +132,17 @@ async def hashtag_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def send_note(update: Update, context: ContextTypes.DEFAULT_TYPE, name: str):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
     
     row = await db.fetchone("SELECT content, media_type, media_id FROM notes WHERE chat_id = ? AND name = ?", (chat_id, name))
     
@@ -161,10 +185,19 @@ async def send_note(update: Update, context: ContextTypes.DEFAULT_TYPE, name: st
     except TelegramError as e:
         logger.error(f"Failed to send note {name}: {e}")
 
-@group_only
 async def list_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
     
     rows = await db.fetchall("SELECT name FROM notes WHERE chat_id = ?", (chat_id,))
     
@@ -177,12 +210,26 @@ async def list_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += f"- <code>#{row['name']}</code>\n"
         
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
-
-@group_only
-@admin_required
+admin_required
 async def clear_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
+    if is_pm:
+        from utils.decorators import is_user_admin
+        if not await is_user_admin(chat_id, user.id, context):
+            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
+            return
+
     
     if not context.args:
         await update.effective_message.reply_text("Usage: /clear <name>", parse_mode=ParseMode.HTML)
@@ -197,22 +244,51 @@ async def clear_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text(f"Note <b>{name}</b> deleted.", parse_mode=ParseMode.HTML)
     else:
         await update.effective_message.reply_text(f"Note <b>{name}</b> not found.", parse_mode=ParseMode.HTML)
-
-@owner_required
+owner_required
 async def clearall_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
+    if is_pm:
+        from utils.decorators import is_user_owner
+        if not await is_user_owner(chat_id, user.id, context):
+            await update.effective_message.reply_text("Eeeh?! (・_・;) Only the group owner can tell me to do that!")
+            return
+
     
     await db.execute("DELETE FROM notes WHERE chat_id = ?", (chat_id,))
     await db.commit()
     
     await update.effective_message.reply_text("Cleared all notes for this chat.", parse_mode=ParseMode.HTML)
-
-@group_only
-@admin_required
+admin_required
 async def toggle_privatenotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
+    user = update.effective_user
     chat_id = update.effective_chat.id
+    is_pm = update.effective_chat.type == ChatType.PRIVATE
+    
+    if is_pm:
+        db = context.bot_data["db"]
+        chat_id = await db.fetchval("SELECT chat_id FROM connections WHERE user_id = ?", (user.id,))
+        if not chat_id:
+            await update.effective_message.reply_text("Kyaa! You need to connect to a group first, senpai! (/connect)", parse_mode=ParseMode.HTML)
+            return
+
+    if is_pm:
+        from utils.decorators import is_user_admin
+        if not await is_user_admin(chat_id, user.id, context):
+            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
+            return
+
     
     if not context.args:
         await update.effective_message.reply_text("Usage: /privatenotes <on|off>", parse_mode=ParseMode.HTML)

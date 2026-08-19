@@ -264,10 +264,6 @@ def register(app):
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command with deep-link routing."""
     if update.effective_chat.type != ChatType.PRIVATE:
-        await update.effective_message.reply_text(
-            "I'm alive! Use /help to see commands.",
-            parse_mode=ParseMode.HTML,
-        )
         return
 
     db = context.bot_data["db"]
@@ -382,6 +378,9 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command with optional category argument."""
+    if update.effective_chat.type != ChatType.PRIVATE:
+        return
+        
     args = context.args
 
     if args:
