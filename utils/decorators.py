@@ -27,7 +27,7 @@ async def _get_admin_ids(chat_id: int, context: ContextTypes.DEFAULT_TYPE) -> se
     try:
         admins = await context.bot.get_chat_administrators(chat_id)
         admin_ids = {a.user.id for a in admins}
-        # Always include anonymous admin bot ID
+        # Always include anonymous admin bot ID and channel bot ID
         admin_ids.add(1087968824)  # @GroupAnonymousBot
         admin_ids.add(136817688)   # @Channel_Bot
         _admin_cache[chat_id] = {"admins": admin_ids, "ts": now}
@@ -55,7 +55,20 @@ async def is_user_admin(chat_id: int, user_id: int, context: ContextTypes.DEFAUL
             return True
 
     admin_ids = await _get_admin_ids(chat_id, context)
-    return user_id in admin_ids
+    if user_id in admin_ids:
+        return True
+
+    # Fallback direct get_chat_member check
+    try:
+        member = await context.bot.get_chat_member(chat_id, user_id)
+        if member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+            if chat_id in _admin_cache:
+                _admin_cache[chat_id]["admins"].add(user_id)
+            return True
+    except Exception:
+        pass
+
+    return False
 
 
 async def is_user_owner(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
@@ -123,12 +136,20 @@ def can_restrict(func: Callable) -> Callable:
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member or not (
-            bot_member.status == ChatMemberStatus.ADMINISTRATOR and getattr(bot_member, 'can_restrict_members', False)
-        ):
-            await update.effective_message.reply_text(
-                "❌ I need 'Restrict Members' admin permission in this group to do this."
-            )
+        if not bot_member:
+            await update.effective_message.reply_text("❌ Failed to verify bot permissions.")
+            return
+
+        if bot_member.status == ChatMemberStatus.OWNER:
+            return await func(update, context, *args, **kwargs)
+        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
+            if not getattr(bot_member, 'can_restrict_members', False):
+                await update.effective_message.reply_text(
+                    "❌ I need 'Restrict Members' admin permission in this group to do this."
+                )
+                return
+        else:
+            await update.effective_message.reply_text("❌ I need to be an admin in this group to do this.")
             return
 
         return await func(update, context, *args, **kwargs)
@@ -149,12 +170,20 @@ def can_delete(func: Callable) -> Callable:
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member or not (
-            bot_member.status == ChatMemberStatus.ADMINISTRATOR and getattr(bot_member, 'can_delete_messages', False)
-        ):
-            await update.effective_message.reply_text(
-                "❌ I need 'Delete Messages' admin permission in this group to do this."
-            )
+        if not bot_member:
+            await update.effective_message.reply_text("❌ Failed to verify bot permissions.")
+            return
+
+        if bot_member.status == ChatMemberStatus.OWNER:
+            return await func(update, context, *args, **kwargs)
+        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
+            if not getattr(bot_member, 'can_delete_messages', False):
+                await update.effective_message.reply_text(
+                    "❌ I need 'Delete Messages' admin permission in this group to do this."
+                )
+                return
+        else:
+            await update.effective_message.reply_text("❌ I need to be an admin in this group to do this.")
             return
 
         return await func(update, context, *args, **kwargs)
@@ -175,12 +204,20 @@ def can_pin(func: Callable) -> Callable:
             return
 
         bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member or not (
-            bot_member.status == ChatMemberStatus.ADMINISTRATOR and getattr(bot_member, 'can_pin_messages', False)
-        ):
-            await update.effective_message.reply_text(
-                "❌ I need 'Pin Messages' admin permission in this group to do this."
-            )
+        if not bot_member:
+            await update.effective_message.reply_text("❌ Failed to verify bot permissions.")
+            return
+
+        if bot_member.status == ChatMemberStatus.OWNER:
+            return await func(update, context, *args, **kwargs)
+        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
+            if not getattr(bot_member, 'can_pin_messages', False):
+                await update.effective_message.reply_text(
+                    "❌ I need 'Pin Messages' admin permission in this group to do this."
+                )
+                return
+        else:
+            await update.effective_message.reply_text("❌ I need to be an admin in this group to do this.")
             return
 
         return await func(update, context, *args, **kwargs)

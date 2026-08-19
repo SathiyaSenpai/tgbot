@@ -17,7 +17,8 @@ try:
 except ImportError:
     pass
 
-from telegram.ext import ApplicationBuilder, Application
+from telegram import Update
+from telegram.ext import ApplicationBuilder, Application, ContextTypes
 
 from config import BOT_TOKEN, LOG_LEVEL, DB_PATH, GITHUB_TOKEN, validate_config
 from database.db import Database
@@ -37,6 +38,11 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logging.getLogger("telegram.ext._updater").setLevel(logging.WARNING)
 
 logger = logging.getLogger("senpai")
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log exceptions caused by Updates."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
 
 
 async def post_init(application: Application) -> None:
@@ -88,19 +94,15 @@ def main():
         .build()
     )
 
+    app.add_error_handler(error_handler)
+
     register_all_handlers(app)
 
     logger.info("Starting polling...")
     app.run_polling(
         drop_pending_updates=True,
         poll_interval=1.0,
-        allowed_updates=[
-            "message",
-            "edited_message",
-            "callback_query",
-            "chat_member",
-            "my_chat_member",
-        ],
+        allowed_updates=Update.ALL_TYPES,
     )
 
 

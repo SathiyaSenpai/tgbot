@@ -209,9 +209,14 @@ async def blocklist_scanner(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     chat = update.effective_chat
     user = update.effective_user
-    db = context.bot_data["db"]
-    
-    if await is_user_admin(chat, user.id, context.bot):
+    if not user or user.is_bot or not chat:
+        return
+        
+    db = context.bot_data.get("db")
+    if not db:
+        return
+        
+    if await is_user_admin(chat.id, user.id, context, update):
         return
         
     approved = await db.fetchval("SELECT 1 FROM approved_users WHERE chat_id = ? AND user_id = ?", (chat.id, user.id))

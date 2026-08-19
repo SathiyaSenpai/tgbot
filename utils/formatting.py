@@ -14,12 +14,22 @@ FILLING_REGEX = re.compile(r"\{(\w+)\}")
 
 def apply_fillings(
     text: str,
-    user: Optional[User] = None,
+    user: Optional[object] = None,
     chat: Optional[Chat] = None,
     member_count: Optional[int] = None,
 ) -> str:
     if not text:
         return text
+
+    # Auto-detect if Message or Update was passed as user
+    if user and hasattr(user, "from_user"):
+        if not chat and hasattr(user, "chat"):
+            chat = user.chat
+        user = user.from_user
+    elif user and hasattr(user, "effective_user"):
+        if not chat and hasattr(user, "effective_chat"):
+            chat = user.effective_chat
+        user = user.effective_user
 
     replacements = {}
 

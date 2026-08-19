@@ -118,9 +118,9 @@ async def send_note(update: Update, context: ContextTypes.DEFAULT_TYPE, name: st
     if not row:
         return
         
-    is_private = await db.get_chat_setting(chat_id, "privatenotes", "0")
+    is_private = await db.get_chat_setting(chat_id, "private_notes", 0)
     
-    if is_private == "1" and update.effective_chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
+    if str(is_private).lower() in ("1", "true") and update.effective_chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
         bot_username = context.bot.username
         markup = InlineKeyboardMarkup([[InlineKeyboardButton("View in PM", url=f"https://t.me/{bot_username}?start=note_{chat_id}_{name}")]])
         await update.effective_message.reply_text(f"Note <b>{name}</b>:", reply_markup=markup, parse_mode=ParseMode.HTML)
@@ -213,9 +213,9 @@ async def toggle_privatenotes(update: Update, context: ContextTypes.DEFAULT_TYPE
         
     val = context.args[0].lower()
     if val in ["on", "yes", "true"]:
-        await db.set_chat_setting(chat_id, "privatenotes", "1")
+        await db.set_chat_setting(chat_id, "private_notes", 1)
     elif val in ["off", "no", "false"]:
-        await db.set_chat_setting(chat_id, "privatenotes", "0")
+        await db.set_chat_setting(chat_id, "private_notes", 0)
     else:
         await update.effective_message.reply_text("Invalid value. Use on or off.", parse_mode=ParseMode.HTML)
         return
