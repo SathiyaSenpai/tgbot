@@ -9,7 +9,6 @@ from typing import Optional, Tuple
 from telegram import Update, Message, User
 from telegram.ext import ContextTypes
 from telegram.constants import ChatMemberStatus
-from telegram.error import BadRequest
 
 logger = logging.getLogger(__name__)
 
@@ -130,27 +129,26 @@ async def is_user_in_chat(chat_id: int, user_id: int, context: ContextTypes.DEFA
 
 
 async def can_act_on_user(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, target_id: int
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    user_id: int,
+    target_id: int,
 ) -> bool:
-    chat_id = update.effective_chat.id
     bot_id = context.bot.id
 
     if target_id == bot_id:
-        await update.effective_message.reply_text("❌ I'm not going to do that to myself!")
+        return False
+
+    if target_id == user_id:
         return False
 
     try:
         target_member = await context.bot.get_chat_member(chat_id, target_id)
-    except BadRequest:
-        return True  # User not in chat, might still be actionable
-
-    if target_member.status == ChatMemberStatus.OWNER:
-        await update.effective_message.reply_text("❌ I can't do that to the chat owner.")
-        return False
-
-    if target_member.status == ChatMemberStatus.ADMINISTRATOR:
-        await update.effective_message.reply_text("❌ I can't do that to another admin.")
-        return False
+        if target_member.status in (ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR):
+            return False
+    except Exception:
+        # If user is not in chat, action (like ban/unban) might still be permitted
+        pass
 
     return True
 

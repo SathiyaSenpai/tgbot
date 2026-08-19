@@ -99,60 +99,64 @@ async def is_admin_or_approved(chat_id, user_id, bot):
         return False
 
 async def check_flood(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.effective_message
-    if not msg:
-        return
-        
-    user = update.effective_user
-    if not user or user.is_bot:
-        return
-        
-    chat = update.effective_chat
-    
-    db = context.bot_data["db"]
-    flood_limit = await db.get_chat_setting(chat.id, "flood_limit", 0)
-    
-    if flood_limit <= 0:
-        return
-        
-    if await is_admin_or_approved(chat.id, user.id, context.bot):
-        return
-        
-    last_sender = last_senders.get(chat.id)
-    
-    if last_sender != user.id:
-        # Different sender, reset count for the chat
-        last_senders[chat.id] = user.id
-        flood_counts[(chat.id, user.id)] = 1
-        return
-        
-    # Same sender
-    flood_counts[(chat.id, user.id)] += 1
-    
-    if flood_counts[(chat.id, user.id)] > flood_limit:
-        flood_mode = await db.get_chat_setting(chat.id, "flood_mode", "mute")
-        
-        try:
-            if flood_mode == "ban":
-                await context.bot.ban_chat_member(chat.id, user.id)
-                await msg.reply_text(f"User {user.first_name} was banned for flooding.")
-            elif flood_mode == "kick":
-                await context.bot.ban_chat_member(chat.id, user.id)
-                await context.bot.unban_chat_member(chat.id, user.id)
-                await msg.reply_text(f"User {user.first_name} was kicked for flooding.")
-            elif flood_mode == "mute":
-                from telegram import ChatPermissions
-                await context.bot.restrict_chat_member(
-                    chat.id, 
-                    user.id, 
-                    ChatPermissions(can_send_messages=False)
-                )
-                await msg.reply_text(f"User {user.first_name} was muted for flooding.")
-            # Note: tban/tmute would require time parsing, simplifying for now
-            # or default to e.g. 1 hour
+    try:
+        msg = update.effective_message
+        if not msg:
+            return
             
-            # Reset counter after action
-            flood_counts[(chat.id, user.id)] = 0
+        user = update.effective_user
+        if not user or user.is_bot:
+            return
             
-        except (TelegramError, BadRequest, Forbidden) as e:
-            logger.warning(f"Could not apply flood action: {e}")
+        chat = update.effective_chat
+        if not chat:
+            return
+            
+        db = context.bot_data.get("db")
+        if not db:
+            return
+            
+        flood_limit = await db.get_chat_setting(chat.id, "flood_limit", 0)
+        
+        if not flood_limit or flood_limit <= 0:
+            return
+            
+        if await is_admin_or_approved(chat.id, user.id, context.bot):
+            return
+            
+        last_sender = last_senders.get(chat.id)
+        
+        if last_sender != user.id:
+            last_senders[chat.id] = user.id
+            flood_counts[(chat.id, user.id)] = 1
+            return
+            
+        flood_counts[(chat.id, user.id)] += 1
+        
+        if flood_counts[(chat.id, user.id)] > flood_limit:
+            flood_mode = await db.get_chat_setting(chat.id, "flood_mode", "mute")
+            
+            try:
+                if flood_mode == "ban":
+                    await context.bot.ban_chat_member(chat.id, user.id)
+                    await msg.reply_text(f"User {user.first_name} was banned for flooding.")
+                elif flood_mode == "kick":
+                    await context.bot.ban_chat_member(chat.id, user.id)
+                    await context.bot.unban_chat_member(chat.id, user.id)
+                    await msg.reply_text(f"User {user.first_name} was kicked for flooding.")
+                elif flood_mode == "mute":
+                    from telegram import ChatPermissions
+                    await context.bot.restrict_chat_member(
+                        chat.id, 
+                        user.id, 
+                        ChatPermissions(can_send_messages=False)
+                    )
+                    await msg.reply_text(f"User {user.first_name} was muted for flooding.")
+                
+                # Reset counter after action
+                flood_counts[(chat.id, user.id)] = 0
+                
+            except (TelegramError, BadRequest, Forbidden) as e:
+                logger.warning(f"Could not apply flood action: {e}")
+    except Exception as e:
+        logger.debug(f"Error in check_flood: {e}")

@@ -349,7 +349,7 @@ async def promote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logger.warning(f"Could not set title: {e}")
         
         await update.effective_message.reply_text(f"Promoted {mention_html(target_id, 'User')}.", parse_mode=ParseMode.HTML)
-        await invalidate_admin_cache(context, chat.id)
+        invalidate_admin_cache(chat.id)
         await log_action(db, context, chat.id, f"<b>Promoted</b>\nAdmin: {mention_html(user.id, user.first_name)}\nUser: {mention_html(target_id, 'User')}")
     except (TelegramError, BadRequest, Forbidden) as e:
         await update.effective_message.reply_text(f"Failed to promote: {e}")
@@ -378,7 +378,7 @@ async def demote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
             can_manage_chat=False
         )
         await update.effective_message.reply_text(f"Demoted {mention_html(target_id, 'User')}.", parse_mode=ParseMode.HTML)
-        await invalidate_admin_cache(context, chat.id)
+        invalidate_admin_cache(chat.id)
         await log_action(db, context, chat.id, f"<b>Demoted</b>\nAdmin: {mention_html(user.id, user.first_name)}\nUser: {mention_html(target_id, 'User')}")
     except (TelegramError, BadRequest, Forbidden) as e:
         await update.effective_message.reply_text(f"Failed to demote: {e}")
@@ -400,7 +400,7 @@ async def adminlist_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_required
 async def admincache_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
-    await invalidate_admin_cache(context, chat.id)
+    invalidate_admin_cache(chat.id)
     await update.effective_message.reply_text("Admin cache invalidated.")
 
 @group_only

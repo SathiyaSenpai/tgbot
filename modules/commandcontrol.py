@@ -82,11 +82,11 @@ async def disabledel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /disabledel <on|off>", parse_mode=ParseMode.HTML)
         return
         
-    val = context.args[0].lower() == 'on'
-    await db.set_chat_setting(chat_id, 'disabledel', val)
+    val = 1 if context.args[0].lower() == 'on' else 0
+    await db.set_chat_setting(chat_id, 'disable_del', val)
     await db.commit()
     
-    status = "enabled" if val else "disabled"
+    status = "enabled" if val == 1 else "disabled"
     await update.effective_message.reply_text(f"Auto-delete for disabled commands is now {status}.", parse_mode=ParseMode.HTML)
 
 @group_only
@@ -95,31 +95,39 @@ async def cmds_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.effective_message or not update.effective_message.text:
-        return
+    try:
+        if not update.effective_message or not update.effective_message.text:
+            return
+            
+        text = update.effective_message.text
+        if not text.startswith('/'):
+            return
+            
+        cmd = text.split()[0][1:].lower().split('@')[0]
         
-    text = update.effective_message.text
-    if not text.startswith('/'):
-        return
+        db = context.bot_data.get("db")
+        if not db or not update.effective_chat:
+            return
+            
+        chat_id = update.effective_chat.id
         
-    cmd = text.split()[0][1:].lower().split('@')[0]
-    
-    db = context.bot_data["db"]
-    chat_id = update.effective_chat.id
-    
-    is_disabled = await db.fetchval(
-        "SELECT 1 FROM disabled_commands WHERE chat_id = ? AND command = ?",
-        (chat_id, cmd)
-    )
-    
-    if is_disabled:
-        del_on = await db.get_chat_setting(chat_id, 'disabledel', False)
-        if del_on:
-            try:
-                await update.effective_message.delete()
-            except TelegramError:
-                pass
-        raise ApplicationHandlerStop()
+        is_disabled = await db.fetchval(
+            "SELECT 1 FROM disabled_commands WHERE chat_id = ? AND command = ?",
+            (chat_id, cmd)
+        )
+        
+        if is_disabled:
+            del_on = await db.get_chat_setting(chat_id, 'disable_del', 0)
+            if del_on:
+                try:
+                    await update.effective_message.delete()
+                except TelegramError:
+                    pass
+            raise ApplicationHandlerStop()
+    except ApplicationHandlerStop:
+        raise
+    except Exception as e:
+        logger.debug(f"Error checking disabled commands: {e}")
 
 def register(app):
     # Group -2 for middleware

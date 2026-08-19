@@ -304,8 +304,12 @@ class Database:
 
     async def get_chat_setting(self, chat_id: int, setting: str, default=None):
         """Get a single chat setting value."""
-        row = await self.fetchone(f"SELECT {setting} FROM chats WHERE chat_id = ?", (chat_id,))
-        return row[0] if row else default
+        try:
+            row = await self.fetchone(f"SELECT {setting} FROM chats WHERE chat_id = ?", (chat_id,))
+            return row[0] if (row and row[0] is not None) else default
+        except Exception as e:
+            logger.debug(f"Failed to get setting {setting} for {chat_id}: {e}")
+            return default
 
     async def set_chat_setting(self, chat_id: int, setting: str, value) -> None:
         """Set a single chat setting value."""
