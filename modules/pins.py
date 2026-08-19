@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest, Forbidden
 
@@ -10,10 +10,15 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("pin", pin_message), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "pin", pin_message), group=0)
     app.add_handler(CommandHandler("unpin", unpin_message), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unpin", unpin_message), group=0)
     app.add_handler(CommandHandler("unpinall", unpin_all_messages), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unpinall", unpin_all_messages), group=0)
     app.add_handler(CommandHandler("pinned", get_pinned), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "pinned", get_pinned), group=0)
     app.add_handler(CommandHandler("permapin", permapin), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "permapin", permapin), group=0)
 
 @group_only
 @can_pin

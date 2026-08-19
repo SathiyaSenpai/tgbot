@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -12,14 +12,23 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("addrepo", addrepo), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "addrepo", addrepo), group=0)
     app.add_handler(CommandHandler("rmrepo", rmrepo), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "rmrepo", rmrepo), group=0)
     app.add_handler(CommandHandler("repos", repos), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "repos", repos), group=0)
     app.add_handler(CommandHandler("setbranch", setbranch), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setbranch", setbranch), group=0)
     app.add_handler(CommandHandler("commits", commits), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "commits", commits), group=0)
     app.add_handler(CommandHandler("trackme", trackme), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "trackme", trackme), group=0)
     app.add_handler(CommandHandler("untrackme", untrackme), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "untrackme", untrackme), group=0)
     app.add_handler(CommandHandler("trackers", trackers), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "trackers", trackers), group=0)
     app.add_handler(CommandHandler("pollinterval", pollinterval), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "pollinterval", pollinterval), group=0)
 
     app.job_queue.run_repeating(check_all_repos, interval=COMMIT_POLL_INTERVAL * 60, first=30)
 

@@ -1,7 +1,7 @@
 import logging
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.error import TelegramError, BadRequest, Forbidden
 
 from utils.decorators import admin_required, can_restrict, group_only, invalidate_admin_cache
@@ -26,11 +26,11 @@ async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     target_id, reason = await get_target_user(update, context)
     if not target_id:
-        await update.effective_message.reply_text("Please specify a user to ban.")
+        await update.effective_message.reply_text("Who do you want me to ban, senpai? (・`ω´・) Please specify someone!")
         return
         
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -41,7 +41,7 @@ async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
         await log_action(db, context, chat.id, f"<b>Ban</b>\nAdmin: {mention_html(user.id, user.first_name)}\nUser: {mention_html(target_id, 'User')}\nReason: {reason or 'None'}")
     except (TelegramError, BadRequest, Forbidden) as e:
-        await update.effective_message.reply_text(f"Failed to ban: {e}")
+        await update.effective_message.reply_text(f"Uwaaah~ (╥﹏╥) I couldn't ban them: {e}")
 
 @group_only
 @can_restrict
@@ -76,14 +76,14 @@ async def dban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message to dban.")
+        await update.effective_message.reply_text("Senpai, you have to reply to their message so I know who to delete! (｀･ω･´)")
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
     reason = " ".join(context.args) if context.args else ""
     
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -99,7 +99,7 @@ async def dban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
         await log_action(db, context, chat.id, f"<b>DBan</b>\nAdmin: {mention_html(user.id, user.first_name)}\nUser: {mention_html(target_id, 'User')}\nReason: {reason or 'None'}")
     except (TelegramError, BadRequest, Forbidden) as e:
-        await update.effective_message.reply_text(f"Failed to ban: {e}")
+        await update.effective_message.reply_text(f"Uwaaah~ (╥﹏╥) I couldn't ban them: {e}")
 
 @group_only
 @can_restrict
@@ -123,7 +123,7 @@ async def tban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -177,13 +177,13 @@ async def dtban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message.")
+        await update.effective_message.reply_text("You need to reply to a message, senpai! (´• ω •`)")
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
     
     if not context.args:
-        await update.effective_message.reply_text("Usage: /dtban <time> [reason]")
+        await update.effective_message.reply_text("Usage: /dtban <time> [reason] ~ Don't forget the time, senpai! (｡♥‿♥｡)")
         return
         
     time_str = context.args[0]
@@ -195,7 +195,7 @@ async def dtban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -222,7 +222,7 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     target_id, _ = await get_target_user(update, context)
     if not target_id:
-        await update.effective_message.reply_text("Please specify a user.")
+        await update.effective_message.reply_text("Who is it, senpai? You need to specify a user! (*・ω・)ﾉ")
         return
         
     try:
@@ -241,11 +241,11 @@ async def kick_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     target_id, reason = await get_target_user(update, context)
     if not target_id:
-        await update.effective_message.reply_text("Please specify a user.")
+        await update.effective_message.reply_text("Who is it, senpai? You need to specify a user! (*・ω・)ﾉ")
         return
         
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -293,14 +293,14 @@ async def dkick_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message.")
+        await update.effective_message.reply_text("You need to reply to a message, senpai! (´• ω •`)")
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
     reason = " ".join(context.args) if context.args else ""
     
     if not await can_act_on_user(context, chat.id, user.id, target_id):
-        await update.effective_message.reply_text("You cannot act on this user.")
+        await update.effective_message.reply_text("I-I can't do that to them! (´-﹏-`；) They are too powerful!")
         return
         
     try:
@@ -421,17 +421,32 @@ async def settitle_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("ban", ban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "ban", ban_user), group=0)
     app.add_handler(CommandHandler("sban", sban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "sban", sban_user), group=0)
     app.add_handler(CommandHandler("dban", dban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dban", dban_user), group=0)
     app.add_handler(CommandHandler("tban", tban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "tban", tban_user), group=0)
     app.add_handler(CommandHandler("stban", stban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "stban", stban_user), group=0)
     app.add_handler(CommandHandler("dtban", dtban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dtban", dtban_user), group=0)
     app.add_handler(CommandHandler("unban", unban_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unban", unban_user), group=0)
     app.add_handler(CommandHandler("kick", kick_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "kick", kick_user), group=0)
     app.add_handler(CommandHandler("skick", skick_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "skick", skick_user), group=0)
     app.add_handler(CommandHandler("dkick", dkick_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dkick", dkick_user), group=0)
     app.add_handler(CommandHandler("promote", promote_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "promote", promote_user), group=0)
     app.add_handler(CommandHandler("demote", demote_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "demote", demote_user), group=0)
     app.add_handler(CommandHandler("adminlist", adminlist_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "adminlist", adminlist_cmd), group=0)
     app.add_handler(CommandHandler("admincache", admincache_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "admincache", admincache_cmd), group=0)
     app.add_handler(CommandHandler("settitle", settitle_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "settitle", settitle_cmd), group=0)

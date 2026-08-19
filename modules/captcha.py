@@ -1,7 +1,7 @@
 import logging
 import random
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
-from telegram.ext import CommandHandler, ChatMemberHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ChatMemberHandler, CallbackQueryHandler, ContextTypes
 from telegram.constants import ParseMode, ChatMemberStatus
 from telegram.error import TelegramError
 
@@ -270,10 +270,15 @@ async def captcha_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("captcha", captcha_toggle), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "captcha", captcha_toggle), group=0)
     app.add_handler(CommandHandler("captchamode", captchamode_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "captchamode", captchamode_cmd), group=0)
     app.add_handler(CommandHandler("captchatime", captchatime_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "captchatime", captchatime_cmd), group=0)
     app.add_handler(CommandHandler("captchakick", captchakick_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "captchakick", captchakick_cmd), group=0)
     app.add_handler(CommandHandler("setcaptchatext", setcaptchatext_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setcaptchatext", setcaptchatext_cmd), group=0)
     
     # Group 3 so it runs before greetings in Group 4
     app.add_handler(ChatMemberHandler(new_member_captcha, ChatMemberHandler.CHAT_MEMBER), group=3)

@@ -1,7 +1,7 @@
 import logging
 from telegram import Update, ChatPermissions
 from telegram.constants import ParseMode
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.error import TelegramError, BadRequest, Forbidden
 
 from utils.decorators import can_restrict, group_only
@@ -110,7 +110,7 @@ async def dmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message.")
+        await update.effective_message.reply_text("You need to reply to a message, senpai! (´• ω •`)")
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
@@ -211,7 +211,7 @@ async def dtmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message.")
+        await update.effective_message.reply_text("You need to reply to a message, senpai! (´• ω •`)")
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
@@ -269,9 +269,16 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("mute", mute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "mute", mute_user), group=0)
     app.add_handler(CommandHandler("smute", smute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "smute", smute_user), group=0)
     app.add_handler(CommandHandler("dmute", dmute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dmute", dmute_user), group=0)
     app.add_handler(CommandHandler("tmute", tmute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "tmute", tmute_user), group=0)
     app.add_handler(CommandHandler("stmute", stmute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "stmute", stmute_user), group=0)
     app.add_handler(CommandHandler("dtmute", dtmute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dtmute", dtmute_user), group=0)
     app.add_handler(CommandHandler("unmute", unmute_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unmute", unmute_user), group=0)

@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.error import TelegramError, BadRequest, Forbidden
 
 from utils.decorators import can_delete, group_only
@@ -9,8 +9,11 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("purge", purge), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "purge", purge), group=0)
     app.add_handler(CommandHandler("spurge", spurge), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "spurge", spurge), group=0)
     app.add_handler(CommandHandler("del", del_message), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "del", del_message), group=0)
 
 @group_only
 @can_delete

@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -11,8 +11,11 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("schedule", schedule_message), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "schedule", schedule_message), group=0)
     app.add_handler(CommandHandler("schedules", list_schedules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "schedules", list_schedules), group=0)
     app.add_handler(CommandHandler("cancelschedule", cancel_schedule), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cancelschedule", cancel_schedule), group=0)
 
 @admin_required
 async def schedule_message(update: Update, context: ContextTypes.DEFAULT_TYPE):

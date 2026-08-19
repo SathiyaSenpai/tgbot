@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes, ChatMemberHandler, MessageHandler, filters
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes, ChatMemberHandler, MessageHandler, filters
 from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest
 
@@ -11,13 +11,21 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("welcome", welcome), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "welcome", welcome), group=0)
     app.add_handler(CommandHandler("setwelcome", setwelcome), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setwelcome", setwelcome), group=0)
     app.add_handler(CommandHandler("resetwelcome", resetwelcome), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetwelcome", resetwelcome), group=0)
     app.add_handler(CommandHandler("goodbye", goodbye), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "goodbye", goodbye), group=0)
     app.add_handler(CommandHandler("setgoodbye", setgoodbye), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setgoodbye", setgoodbye), group=0)
     app.add_handler(CommandHandler("resetgoodbye", resetgoodbye), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetgoodbye", resetgoodbye), group=0)
     app.add_handler(CommandHandler("cleanwelcome", cleanwelcome), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cleanwelcome", cleanwelcome), group=0)
     app.add_handler(CommandHandler("cleanservice", cleanservice), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cleanservice", cleanservice), group=0)
     
     app.add_handler(ChatMemberHandler(chat_member_event, ChatMemberHandler.CHAT_MEMBER), group=4)
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.StatusUpdate.LEFT_CHAT_MEMBER, delete_service_message), group=4)

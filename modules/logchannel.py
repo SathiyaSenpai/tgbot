@@ -1,7 +1,7 @@
 import logging
 import re
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode, ChatType
 from telegram.error import TelegramError
 
@@ -111,6 +111,9 @@ async def unsetlog_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("setlog", setlog_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setlog", setlog_cmd), group=0)
     app.add_handler(MessageHandler(filters.FORWARDED & filters.ChatType.GROUPS, forward_setlog_handler), group=0)
     app.add_handler(CommandHandler("logchannel", logchannel_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "logchannel", logchannel_cmd), group=0)
     app.add_handler(CommandHandler("unsetlog", unsetlog_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unsetlog", unsetlog_cmd), group=0)

@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -107,5 +107,7 @@ async def reports_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("report", report_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "report", report_cmd), group=0)
     app.add_handler(CommandHandler("reports", reports_toggle), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "reports", reports_toggle), group=0)
     app.add_handler(MessageHandler(filters.Regex(r'(?i)@admin') & filters.ChatType.GROUPS, admin_mention_handler), group=0)

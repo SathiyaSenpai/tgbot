@@ -2,7 +2,7 @@ import logging
 import shlex
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode, ChatType
 from telegram.error import TelegramError
 
@@ -13,12 +13,19 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("save", save_note), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "save", save_note), group=0)
     app.add_handler(CommandHandler("get", get_note), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "get", get_note), group=0)
     app.add_handler(CommandHandler("notes", list_notes), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "notes", list_notes), group=0)
     app.add_handler(CommandHandler("saved", list_notes), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "saved", list_notes), group=0)
     app.add_handler(CommandHandler("clear", clear_note), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "clear", clear_note), group=0)
     app.add_handler(CommandHandler("clearall", clearall_notes), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "clearall", clearall_notes), group=0)
     app.add_handler(CommandHandler("privatenotes", toggle_privatenotes), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "privatenotes", toggle_privatenotes), group=0)
     
     app.add_handler(
         MessageHandler(filters.Regex(r"^#([a-zA-Z0-9_]+)"), hashtag_note), 

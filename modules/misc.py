@@ -1,7 +1,7 @@
 import logging
 import time
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode, ChatType
 from telegram.error import TelegramError
 
@@ -12,10 +12,15 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("kickme", kickme), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "kickme", kickme), group=0)
     app.add_handler(CommandHandler("bam", bam), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "bam", bam), group=0)
     app.add_handler(CommandHandler("id", get_id), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "id", get_id), group=0)
     app.add_handler(CommandHandler("info", info), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "info", info), group=0)
     app.add_handler(CommandHandler("ping", ping), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "ping", ping), group=0)
 
 @group_only
 async def kickme(update: Update, context: ContextTypes.DEFAULT_TYPE):

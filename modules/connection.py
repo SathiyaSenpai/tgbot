@@ -1,6 +1,6 @@
 import logging
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import CommandHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes, filters
 from telegram.constants import ParseMode, ChatType
 from telegram.error import TelegramError, BadRequest, Forbidden
 
@@ -106,6 +106,10 @@ async def connection_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("connect", connect_handler), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "connect", connect_handler), group=0)
     app.add_handler(CommandHandler("start", connect_handler, filters=filters.Regex(r'^/start connect_')), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "start", connect_handler, filters=filters.Regex(r'^/start connect_')), group=0)
     app.add_handler(CommandHandler("disconnect", disconnect_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "disconnect", disconnect_cmd), group=0)
     app.add_handler(CommandHandler("connection", connection_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "connection", connection_cmd), group=0)

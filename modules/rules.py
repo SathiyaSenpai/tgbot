@@ -1,7 +1,7 @@
 import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 
 from utils.decorators import admin_required, group_only
@@ -10,11 +10,17 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("rules", show_rules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "rules", show_rules), group=0)
     app.add_handler(CommandHandler("setrules", set_rules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setrules", set_rules), group=0)
     app.add_handler(CommandHandler("clearrules", clear_rules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "clearrules", clear_rules), group=0)
     app.add_handler(CommandHandler("privaterules", toggle_privaterules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "privaterules", toggle_privaterules), group=0)
     app.add_handler(CommandHandler("setrulesbutton", set_rules_button), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setrulesbutton", set_rules_button), group=0)
     app.add_handler(CommandHandler("resetrulesbutton", reset_rules_button), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetrulesbutton", reset_rules_button), group=0)
 
 @group_only
 async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):

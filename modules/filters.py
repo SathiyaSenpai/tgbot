@@ -2,7 +2,7 @@ import logging
 import shlex
 
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -13,9 +13,13 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("filter", set_filter), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "filter", set_filter), group=0)
     app.add_handler(CommandHandler("filters", list_filters), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "filters", list_filters), group=0)
     app.add_handler(CommandHandler("stop", stop_filter), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "stop", stop_filter), group=0)
     app.add_handler(CommandHandler("stopall", stopall_filters), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "stopall", stopall_filters), group=0)
     
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.GROUPS, filter_scanner), 

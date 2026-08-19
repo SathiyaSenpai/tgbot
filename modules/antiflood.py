@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode, ChatMemberStatus
 from telegram.error import TelegramError, BadRequest, Forbidden
 
@@ -16,8 +16,11 @@ last_senders = {}
 
 def register(app):
     app.add_handler(CommandHandler("flood", flood_status), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "flood", flood_status), group=0)
     app.add_handler(CommandHandler("setflood", setflood), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setflood", setflood), group=0)
     app.add_handler(CommandHandler("setfloodmode", setfloodmode), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setfloodmode", setfloodmode), group=0)
     
     app.add_handler(MessageHandler(filters.ALL & filters.ChatType.GROUPS, check_flood), group=-1)
 

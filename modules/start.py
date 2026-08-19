@@ -5,7 +5,7 @@ Handles /start (with deep-link routing), /help with inline keyboard navigation.
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    CommandHandler,
+    CommandHandler, PrefixHandler,
     CallbackQueryHandler,
     ContextTypes
 )
@@ -255,7 +255,9 @@ MAIN_HELP_TEXT = (
 def register(app):
     """Register start and help handlers."""
     app.add_handler(CommandHandler("start", start_handler), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "start", start_handler), group=0)
     app.add_handler(CommandHandler("help", help_handler), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "help", help_handler), group=0)
     app.add_handler(CallbackQueryHandler(help_callback, pattern=r"^help_"), group=0)
 
 

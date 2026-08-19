@@ -4,7 +4,7 @@ import shlex
 from datetime import datetime, timedelta
 
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -15,13 +15,21 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("addblocklist", add_blocklist), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "addblocklist", add_blocklist), group=0)
     app.add_handler(CommandHandler("rmblocklist", rm_blocklist), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "rmblocklist", rm_blocklist), group=0)
     app.add_handler(CommandHandler("blocklist", list_blocklist), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "blocklist", list_blocklist), group=0)
     app.add_handler(CommandHandler("unblocklistall", unblocklist_all), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unblocklistall", unblocklist_all), group=0)
     app.add_handler(CommandHandler("blocklistmode", set_blocklist_mode), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "blocklistmode", set_blocklist_mode), group=0)
     app.add_handler(CommandHandler("blocklistdelete", set_blocklist_delete), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "blocklistdelete", set_blocklist_delete), group=0)
     app.add_handler(CommandHandler("setblocklistreason", set_blocklist_reason), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setblocklistreason", set_blocklist_reason), group=0)
     app.add_handler(CommandHandler("resetblocklistreason", reset_blocklist_reason), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetblocklistreason", reset_blocklist_reason), group=0)
     
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.GROUPS, blocklist_scanner), 

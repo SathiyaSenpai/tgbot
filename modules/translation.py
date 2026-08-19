@@ -3,7 +3,7 @@ import logging
 import urllib.parse
 import httpx
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler(["tr", "tl", "translate"], translate_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], ["tr", "tl", "translate"], translate_cmd), group=0)
     app.add_handler(CommandHandler("tts", tts_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "tts", tts_cmd), group=0)
 
 
 async def translate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):

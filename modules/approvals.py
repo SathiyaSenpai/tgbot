@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.constants import ParseMode
 
 from utils.decorators import admin_required, owner_required, group_only
@@ -96,7 +96,12 @@ async def unapproveall_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("approve", approve_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "approve", approve_cmd), group=0)
     app.add_handler(CommandHandler("unapprove", unapprove_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unapprove", unapprove_cmd), group=0)
     app.add_handler(CommandHandler("approved", approved_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "approved", approved_cmd), group=0)
     app.add_handler(CommandHandler("approval", approval_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "approval", approval_cmd), group=0)
     app.add_handler(CommandHandler("unapproveall", unapproveall_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unapproveall", unapproveall_cmd), group=0)

@@ -1,6 +1,6 @@
 import logging
 from telegram import Update, InputProfilePhotoStatic
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.error import TelegramError
 
 from utils.decorators import owner_required
@@ -9,10 +9,15 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("setbotname", setbotname), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setbotname", setbotname), group=0)
     app.add_handler(CommandHandler("setbotdesc", setbotdesc), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setbotdesc", setbotdesc), group=0)
     app.add_handler(CommandHandler("setbotshortdesc", setbotshortdesc), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setbotshortdesc", setbotshortdesc), group=0)
     app.add_handler(CommandHandler("setbotphoto", setbotphoto), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "setbotphoto", setbotphoto), group=0)
     app.add_handler(CommandHandler("removebotphoto", removebotphoto), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "removebotphoto", removebotphoto), group=0)
 
 @owner_required
 async def setbotname(update: Update, context: ContextTypes.DEFAULT_TYPE):

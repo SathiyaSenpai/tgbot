@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 from telegram.error import TelegramError
 
 from utils.decorators import admin_required
@@ -10,9 +10,13 @@ logger = logging.getLogger(__name__)
 
 def register(app):
     app.add_handler(CommandHandler("cleanmsg", cleanmsg), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cleanmsg", cleanmsg), group=0)
     app.add_handler(CommandHandler("keepmsg", keepmsg), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "keepmsg", keepmsg), group=0)
     app.add_handler(CommandHandler("cleancommand", cleancommand), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cleancommand", cleancommand), group=0)
     app.add_handler(CommandHandler("keepcommand", keepcommand), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "keepcommand", keepcommand), group=0)
 
 async def auto_delete_message(message, delay=300):
     async def delete_task():

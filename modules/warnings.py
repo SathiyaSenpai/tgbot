@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from telegram import Update, ChatPermissions
 from telegram.constants import ParseMode
-from telegram.ext import CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
 
 from utils.decorators import admin_required, owner_required, can_restrict, group_only
 from utils.helpers import get_target_user, mention_html, can_act_on_user
@@ -137,7 +137,7 @@ async def swarn_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @can_restrict
 async def dwarn_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_message.reply_to_message:
-        await update.effective_message.reply_text("Reply to a message.")
+        await update.effective_message.reply_text("You need to reply to a message, senpai! (´• ω •`)")
         return
     target_id = update.effective_message.reply_to_message.from_user.id
     reason = " ".join(context.args) if context.args else ""
@@ -248,11 +248,20 @@ async def warnmode_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def register(app):
     app.add_handler(CommandHandler("warn", warn_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "warn", warn_user), group=0)
     app.add_handler(CommandHandler("swarn", swarn_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "swarn", swarn_user), group=0)
     app.add_handler(CommandHandler("dwarn", dwarn_user), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "dwarn", dwarn_user), group=0)
     app.add_handler(CommandHandler("warns", warns_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "warns", warns_cmd), group=0)
     app.add_handler(CommandHandler("rmwarn", rmwarn_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "rmwarn", rmwarn_cmd), group=0)
     app.add_handler(CommandHandler("resetwarn", resetwarn_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetwarn", resetwarn_cmd), group=0)
     app.add_handler(CommandHandler("resetallwarns", resetallwarns_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "resetallwarns", resetallwarns_cmd), group=0)
     app.add_handler(CommandHandler("warnlimit", warnlimit_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "warnlimit", warnlimit_cmd), group=0)
     app.add_handler(CommandHandler("warnmode", warnmode_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "warnmode", warnmode_cmd), group=0)

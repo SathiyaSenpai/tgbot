@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters, ApplicationHandlerStop
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters, ApplicationHandlerStop
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
@@ -100,7 +100,7 @@ async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAUL
             return
             
         text = update.effective_message.text
-        if not text.startswith('/'):
+        if not (text.startswith('/') or text.startswith('!') or text.startswith('?')):
             return
             
         cmd = text.split()[0][1:].lower().split('@')[0]
@@ -131,11 +131,16 @@ async def check_disabled_middleware(update: Update, context: ContextTypes.DEFAUL
 
 def register(app):
     # Group -2 for middleware
-    app.add_handler(MessageHandler(filters.COMMAND & filters.ChatType.GROUPS, check_disabled_middleware), group=-2)
+    app.add_handler(MessageHandler((filters.COMMAND | filters.Regex(r"^[!?]")) & filters.ChatType.GROUPS, check_disabled_middleware), group=-2)
     
     # Group 0 for commands
     app.add_handler(CommandHandler("disable", disable_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "disable", disable_cmd), group=0)
     app.add_handler(CommandHandler("enable", enable_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "enable", enable_cmd), group=0)
     app.add_handler(CommandHandler("disabled", disabled_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "disabled", disabled_cmd), group=0)
     app.add_handler(CommandHandler("disabledel", disabledel_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "disabledel", disabledel_cmd), group=0)
     app.add_handler(CommandHandler("cmds", cmds_cmd), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "cmds", cmds_cmd), group=0)

@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode, ChatMemberStatus
 from telegram.error import TelegramError, BadRequest, Forbidden
 
@@ -16,9 +16,13 @@ AVAILABLE_LOCKS = [
 
 def register(app):
     app.add_handler(CommandHandler("lock", lock_types), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "lock", lock_types), group=0)
     app.add_handler(CommandHandler("unlock", unlock_types), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "unlock", unlock_types), group=0)
     app.add_handler(CommandHandler("locks", show_locks), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "locks", show_locks), group=0)
     app.add_handler(CommandHandler("locktypes", show_locktypes), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "locktypes", show_locktypes), group=0)
     
     app.add_handler(MessageHandler(filters.ALL & filters.ChatType.GROUPS, enforce_locks), group=3)
 
