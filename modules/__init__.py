@@ -29,6 +29,7 @@ def register_all_handlers(app: Application) -> None:
             ("autodelete", "modules.autodelete"),
             ("botsettings", "modules.botsettings"),
             ("misc", "modules.misc"),
+            ("connect", "modules.connect"),
             ("translation", "modules.translation"),
             ("ai_chat", "modules.ai_chat"),
             ("random_chatter", "modules.random_chatter"),
