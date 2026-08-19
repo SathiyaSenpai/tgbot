@@ -1,6 +1,6 @@
 # Senpai's Bot 🤖
 
-A Telegram group management bot with ROM commit tracking, built for low-memory servers.
+A Telegram group management bot with ROM commit tracking, built for low memory servers.
 
 **Features:** Ban/kick/mute (with silent & delete variants), warnings, blocklist, filters, notes, rules (with PM redirect), welcome/goodbye, CAPTCHA, pins, purge, antiflood, locks, approvals, reports, log channel, scheduled messages, auto-delete, command control, PM remote admin, GitHub commit tracker with security patch detection, and bot identity management.
 
@@ -37,7 +37,7 @@ python bot.py
 ### 4. Deploy to Server (Production)
 
 ```bash
-# On your Azure VM (run as root):
+# On your VM (run as root):
 sudo bash deploy/setup.sh
 
 # Edit config:
@@ -167,17 +167,9 @@ sudo journalctl -u senpais-bot -f
 
 ---
 
-## Memory Usage
-
-| Component | RAM |
-|-----------|-----|
-| Linux OS + systemd + SSH | ~150 MB |
-| Bot (Python + PTB + SQLite) | ~55–80 MB |
-| **Remaining for Tailscale + other** | **~770+ MB** |
-
 Optimizations applied:
 - `jemalloc` memory allocator via `LD_PRELOAD`
-- `uvloop` C-based event loop
+- `uvloop` C based event loop
 - `zram` compressed swap (512 MB effective)
 - SQLite WAL mode with 2 MB cache cap
 - Aggressive GC tuning
