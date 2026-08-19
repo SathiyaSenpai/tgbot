@@ -118,10 +118,32 @@ class GitHubClient:
         """Fetch the security patch level for a ROM org.
         
         Tries these sources in order:
-        1. android_build_release flag_values (LineageOS)
-        2. core/build_id.mk date parsing (crDroid and others)
+        1. LineageOS Gerrit REST API (for LineageOS org - gets real-time merged security patches)
+        2. android_build_release flag_values on GitHub
+        3. core/build_id.mk date parsing (for crDroid and others)
+        4. Legacy version_defaults.mk
         """
-        # Figure out the build tag prefix from the BUILD_ID
+        # 1. LineageOS Gerrit REST API
+        if org.lower() == "lineageos":
+            try:
+                # Query for specific branch or general latest security bump
+                query = f"project:LineageOS/android_build_release+status:merged+message:\"Bump Security String\"+branch:{branch}"
+                gerrit_url = f"https://review.lineageos.org/changes/?q={query}&n=3"
+                resp = await self._client.get(gerrit_url)
+                if resp.status_code == 200:
+                    text = resp.text
+                    if text.startswith(")]}'"):
+                        text = text[4:].strip()
+                    import json
+                    changes = json.loads(text)
+                    for c in changes:
+                        match = re.search(r"(\d{4}-\d{2}-\d{2})", c.get("subject", ""))
+                        if match:
+                            return match.group(1)
+            except Exception as e:
+                logger.debug(f"Gerrit check failed for {org}/{branch}: {e}")
+
+        # 2. Figure out the build tag prefix from the BUILD_ID
         build_id = await self.get_file_content(org, "android_build", "core/build_id.mk", branch)
         tag = None
         if build_id:
@@ -130,7 +152,7 @@ class GitHubClient:
                     tag = line.split("=", 1)[1].strip().split(".")[0].lower()
                     break
 
-        # Try the release flag file first (LineageOS style)
+        # Try the release flag file first (LineageOS GitHub)
         if tag:
             content = await self.get_file_content(
                 org, "android_build_release",
@@ -142,7 +164,7 @@ class GitHubClient:
                 if match:
                     return match.group(1)
 
-        # Fallback: parse date from BUILD_ID itself (e.g. BP1A.250505.005 -> 2025-05-05)
+        # 3. Fallback: parse date from BUILD_ID itself (e.g. BP1A.250505.005 -> 2025-05-05)
         if build_id:
             for line in build_id.splitlines():
                 if line.startswith("BUILD_ID="):
@@ -159,7 +181,7 @@ class GitHubClient:
                             pass
                     break
 
-        # Legacy fallback: version_defaults.mk
+        # 4. Legacy fallback: version_defaults.mk
         content = await self.get_file_content(org, "android_build", "core/version_defaults.mk", branch)
         if content:
             match = SECURITY_PATCH_REGEX.search(content)
