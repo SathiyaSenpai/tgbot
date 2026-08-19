@@ -126,13 +126,15 @@ HELP_CATEGORIES = {
         ),
     },
     "misc": {
-        "title": "Misc",
+        "title": "Misc & Tools",
         "commands": (
-            "/kickme - Kick yourself\n"
-            "/bam - Fake ban (fun)\n"
+            "/tr - Translate text\n"
+            "/tts - Text to speech\n"
             "/id - Get IDs\n"
             "/info - User info\n"
-            "/ping - Check if alive"
+            "/ping - Check if alive\n"
+            "/kickme - Kick yourself\n"
+            "/bam - Fake ban"
         ),
     },
     "flood": {

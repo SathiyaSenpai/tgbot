@@ -51,6 +51,7 @@ def register_all_handlers(app: Application) -> None:
             ("autodelete", "modules.autodelete"),
             ("botsettings", "modules.botsettings"),
             ("misc", "modules.misc"),
+            ("translation", "modules.translation"),
         ]
 
         for name, module_path in modules_group0:

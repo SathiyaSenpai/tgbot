@@ -169,6 +169,8 @@ sudo bash deploy/update.sh
 | `/setlog` | Set audit log channel |
 | `/setbotname <name>` | Change bot name (owner) |
 | `/setbotphoto` (reply to image) | Change bot photo (owner) |
+| `/tr [lang]` `/translate` | Translate text or reply |
+| `/tts [lang] <text>` | Text-to-speech voice note |
 | `/pin` `/unpin` `/purge` `/del` | Pin/purge management |
 | `/kickme` `/bam <user>` | Fun commands |
 
