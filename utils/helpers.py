@@ -88,36 +88,34 @@ async def extract_user_and_reason(
 
 
 async def get_target_user(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> Tuple[Optional[int], Optional[str], Optional[str]]:
+    update: Update, context: ContextTypes.DEFAULT_TYPE, return_rest: bool = False
+) -> Tuple[Optional[int], Optional[str]]:
     message = update.effective_message
     args = context.args or []
 
     if message.reply_to_message and message.reply_to_message.from_user:
         target = message.reply_to_message.from_user
-        reason = " ".join(args) if args else None
-        return target.id, reason, target.first_name
+        rest = " ".join(args) if args else None
+        return target.id, rest
 
     if not args:
-        return None, None, None
+        return None, None
 
     first_arg = args[0]
-    reason = " ".join(args[1:]) if len(args) > 1 else None
+    rest = " ".join(args[1:]) if len(args) > 1 else None
 
     if USER_ID_REGEX.match(first_arg):
         user_id = int(first_arg)
-        try:
-            member = await context.bot.get_chat_member(update.effective_chat.id, user_id)
-            return user_id, reason, member.user.first_name
-        except Exception:
-            return user_id, reason, str(user_id)
+        return user_id, rest
 
     if USERNAME_REGEX.match(first_arg):
-        username = first_arg.lstrip("@")
-        # Can't directly resolve username to user_id via Bot API without the user being in chat
-        return None, reason, username
+        # Username resolution needs cache, for now return None to prompt failure
+        return None, rest
 
-    return None, " ".join(args), None
+    if return_rest:
+        return None, " ".join(args)
+
+    return None, None
 
 
 async def is_user_in_chat(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
