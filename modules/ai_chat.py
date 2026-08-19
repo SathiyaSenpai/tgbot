@@ -18,14 +18,24 @@ if GEMINI_API_KEY:
     }
     
 
+
     # Dynamically find the best flash model available in this region/API version
     def get_flash_model():
         try:
-            models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods and 'flash' in m.name.lower()]
-            if models:
-                # prefer 2.5 over 1.5
-                models.sort(reverse=True)
-                return models[0]
+            available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            # Try the standard models first so we don't accidentally pick paid-only 'omni' variants
+            if "models/gemini-2.5-flash" in available:
+                return "gemini-2.5-flash"
+            if "models/gemini-1.5-flash-latest" in available:
+                return "gemini-1.5-flash-latest"
+            if "models/gemini-2.0-flash" in available:
+                return "gemini-2.0-flash"
+                
+            # fallback to whatever has flash
+            flash_models = [m for m in available if 'flash' in m.lower() and 'omni' not in m.lower()]
+            if flash_models:
+                flash_models.sort(reverse=True)
+                return flash_models[0].split('/')[-1]
         except:
             pass
         return "gemini-2.5-flash"
@@ -34,6 +44,7 @@ if GEMINI_API_KEY:
     model = genai.GenerativeModel(
         model_name=model_name,
         generation_config=generation_config,
+
 
         system_instruction="""You are an AI assistant integrated into a Telegram group named "Senpai's Bot". You must embody the following persona:
 - Personality: Aloof but observant, quietly confident. You are a 'Kuudere' who appears emotionless and cynical on the outside but has a softer, easily flustered core (sometimes blushing or shy).
