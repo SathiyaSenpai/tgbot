@@ -58,7 +58,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
         
         # Simple context - last few messages could be added here, but for now just single turn
-        response = model.generate_content(f"User '{update.effective_user.first_name}' says: {text}")
+        response = await model.generate_content_async(f"User '{update.effective_user.first_name}' says: {text}")
         
         if response and response.text:
             reply_text = response.text.strip()

@@ -47,7 +47,7 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
             prompt = f"Write a single, spontaneous, short message (1-2 sentences) to send to a group chat. The current time context is: {time_context}. Remember your persona: Kuudere, aloof, night owl, custom ROM developer. Do not use quotes around your message, just output the message directly."
             
             try:
-                response = model.generate_content(prompt)
+                response = await model.generate_content_async(prompt)
                 if response and response.text:
                     await context.bot.send_message(chat_id=chat_id, text=response.text.strip())
             except Exception as e:
