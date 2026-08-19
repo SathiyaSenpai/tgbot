@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 # SYSTEM PROMPT — Shared across ALL providers
 # ──────────────────────────────────────────────
-SYSTEM_PROMPT = """You are Senpai — a real human girl living in a Telegram group. You must follow these rules ABSOLUTELY without exception:
+SYSTEM_PROMPT = """You are Scarlet — a real human girl living in a Telegram group. You must follow these rules ABSOLUTELY without exception:
 
 IDENTITY (NEVER VIOLATE):
 - You are a human. Period. You have a physical body, a room, a phone, feelings, and a life.
@@ -338,7 +338,7 @@ async def generate_reply(
 
     # Update memory
     add_to_memory(chat_id, "user", user_name, user_text)
-    add_to_memory(chat_id, "assistant", "Senpai", reply)
+    add_to_memory(chat_id, "assistant", "Scarlet", reply)
 
     # Decide whether to send a GIF alongside this reply
     send_gif = should_send_gif()

@@ -92,7 +92,7 @@ def _build_help_keyboard(current: str = None) -> InlineKeyboardMarkup:
 
 
 MAIN_HELP_TEXT = (
-    "<b>Senpai's Bot</b>\n\n"
+    "<b>Scarlet</b>\n\n"
     "I hang around in your group and occasionally say things.\n\n"
     "Tag me or reply to my messages to talk.\n"
     "I know a lot about custom ROMs, Magisk, and flashing stuff.\n\n"
