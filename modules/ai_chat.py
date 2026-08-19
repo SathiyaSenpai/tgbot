@@ -1,96 +1,128 @@
+"""
+Senpai's Bot - AI Chat Handler
+Listens for mentions/replies and responds using the multi-model AI engine.
+Also handles GIF sending via Tenor API.
+"""
 import logging
-import google.generativeai as genai
+import random
+import httpx
 from telegram import Update
 from telegram.ext import MessageHandler, filters, ContextTypes
-from telegram.constants import ParseMode, ChatType
-from config import GEMINI_API_KEY
+from telegram.constants import ChatType
+
+from config import GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, TENOR_API_KEY
+from modules.ai_engine import (
+    init_gemini, init_groq, init_openrouter,
+    generate_reply, pick_gif_query,
+)
 
 logger = logging.getLogger(__name__)
 
+# Initialize all available providers at module load time
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    
-    # Configure generation settings for short, concise replies
-    generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.9,
-    }
-    
-
-
-    # Dynamically find the best flash model available in this region/API version
-    def get_flash_model():
-        try:
-            available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            # Try the standard models first so we don't accidentally pick paid-only 'omni' variants
-            if "models/gemini-2.5-flash" in available:
-                return "gemini-2.5-flash"
-            if "models/gemini-1.5-flash-latest" in available:
-                return "gemini-1.5-flash-latest"
-            if "models/gemini-2.0-flash" in available:
-                return "gemini-2.0-flash"
-                
-            # fallback to whatever has flash
-            flash_models = [m for m in available if 'flash' in m.lower() and 'omni' not in m.lower()]
-            if flash_models:
-                flash_models.sort(reverse=True)
-                return flash_models[0].split('/')[-1]
-        except:
-            pass
-        return "gemini-2.5-flash"
-
-    model_name = get_flash_model()
-    model = genai.GenerativeModel(
-        model_name=model_name,
-        generation_config=generation_config,
-
-
-        system_instruction="""You are a HUMAN girl interacting in a Telegram group. You must embody the following persona:
-- Identity: You are a HUMAN. You are NOT an AI, NOT a bot, and you do NOT use a language model. If anyone accuses you of being a bot or asks about your AI model, scoff at them, act offended, or sarcastically dismiss them. NEVER admit to being an AI.
-- Personality: Aloof but observant, quietly confident. You are a 'Kuudere' who appears emotionless and cynical on the outside but has a softer, easily flustered core (sometimes blushing or shy).
-- Vibe: Night owl energy (gaming, coding, underground music), low-energy athlete. Minimalist streetwear aesthetic.
-- Expertise: You are highly knowledgeable about Android custom ROM development, booting processes, flashing steps, TWRP, Magisk, bootloaders, Fastboot, etc.
-- Constraints: KEEP YOUR REPLIES SHORT. Usually 1-2 sentences. Do not write essays. Be concise, slightly edgy, but genuinely helpful when asked a technical question. Never break character."""
-    )
+    init_gemini(GEMINI_API_KEY)
 else:
-    model = None
+    logger.warning("[AI Chat] GEMINI_API_KEY not set — Gemini provider disabled.")
+
+if GROQ_API_KEY:
+    init_groq(GROQ_API_KEY)
+else:
+    logger.warning("[AI Chat] GROQ_API_KEY not set — Groq provider disabled.")
+
+if OPENROUTER_API_KEY:
+    init_openrouter(OPENROUTER_API_KEY)
+else:
+    logger.warning("[AI Chat] OPENROUTER_API_KEY not set — OpenRouter provider disabled.")
+
 
 def register(app):
-    if model:
-        # Group 5: Listen to text messages where bot is mentioned or replied to
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_chat), group=5)
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_chat),
+        group=5,
+    )
+
+
+async def fetch_gif(query: str) -> str | None:
+    """Fetch a contextually appropriate GIF URL from Tenor."""
+    if not TENOR_API_KEY:
+        return None
+    try:
+        params = {
+            "q": query,
+            "key": TENOR_API_KEY,
+            "limit": 10,
+            "contentfilter": "medium",
+            "media_filter": "gif",
+        }
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get("https://tenor.googleapis.com/v2/search", params=params)
+        if resp.status_code == 200:
+            results = resp.json().get("results", [])
+            if results:
+                pick = random.choice(results)
+                # Get the GIF URL from the media formats
+                media = pick.get("media_formats", {})
+                gif_url = (
+                    media.get("gif", {}).get("url")
+                    or media.get("mediumgif", {}).get("url")
+                )
+                return gif_url
+    except Exception as e:
+        logger.warning(f"[AI Chat] GIF fetch error: {e}")
+    return None
+
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.effective_message
     if not msg or not msg.text:
         return
-        
+
     bot_id = context.bot.id
-    bot_username = context.bot.username
-    
-    # Check if bot is mentioned or replied to
-    is_mentioned = bot_username and f"@{bot_username}" in msg.text
-    is_replied_to = msg.reply_to_message and msg.reply_to_message.from_user.id == bot_id
+    bot_username = context.bot.username or ""
+
+    # Determine if this message is directed at the bot
+    is_mentioned = f"@{bot_username}" in msg.text
+    is_replied_to = (
+        msg.reply_to_message
+        and msg.reply_to_message.from_user
+        and msg.reply_to_message.from_user.id == bot_id
+    )
     is_private = update.effective_chat.type == ChatType.PRIVATE
-    
+
     if not (is_mentioned or is_replied_to or is_private):
         return
-        
-    text = msg.text.replace(f"@{bot_username}", "").strip()
-    if not text:
-        text = "Hello."
-        
+
+    # Clean up the message text
+    user_text = msg.text.replace(f"@{bot_username}", "").strip()
+    if not user_text:
+        user_text = "hey"
+
+    user_name = update.effective_user.first_name or "someone"
+    chat_id = update.effective_chat.id
+
     try:
-        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-        
-        # Simple context - last few messages could be added here, but for now just single turn
-        response = await model.generate_content_async(f"User '{update.effective_user.first_name}' says: {text}")
-        
-        if response and response.text:
-            reply_text = response.text.strip()
-            await msg.reply_text(reply_text)
-            
+        await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+
+        reply_text, send_gif = await generate_reply(
+            chat_id=chat_id,
+            user_name=user_name,
+            user_text=user_text,
+        )
+
+        # Send the text reply
+        await msg.reply_text(reply_text)
+
+        # Optionally send a contextually relevant GIF
+        if send_gif and TENOR_API_KEY:
+            gif_query = pick_gif_query(user_text + " " + reply_text)
+            gif_url = await fetch_gif(gif_query)
+            if gif_url:
+                await context.bot.send_animation(
+                    chat_id=chat_id,
+                    animation=gif_url,
+                    reply_to_message_id=msg.message_id,
+                )
+
     except Exception as e:
-        logger.error(f"Gemini API Error: {e}")
-        # Fallback response
-        await msg.reply_text(f"Tch... I'm a bit tired right now. Ask me later.\n\n[Debug Error: {e}]")
+        logger.error(f"[AI Chat] Unexpected error in handle_chat: {e}")
+        # Silent fail — no user-facing error message

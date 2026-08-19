@@ -92,12 +92,11 @@ def _build_help_keyboard(current: str = None) -> InlineKeyboardMarkup:
 
 
 MAIN_HELP_TEXT = (
-    "<b>Hi! I'm Senpai's Bot</b>\n\n"
-    "I'm a group management bot with commit tracking features.\n\n"
-    "🔹 <b>Add me to your group</b> as admin with full permissions\n"
-    "🔹 Use the buttons below to explore commands\n"
-    "🔹 Use /help &lt;category&gt; for quick text help\n\n"
-    "<i>Tap a category below to see its commands:</i>"
+    "<b>Senpai's Bot</b>\n\n"
+    "I hang around in your group and occasionally say things.\n\n"
+    "Tag me or reply to my messages to talk.\n"
+    "I know a lot about custom ROMs, Magisk, and flashing stuff.\n\n"
+    "<i>Tap a category below:</i>"
 )
 
 

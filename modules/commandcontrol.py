@@ -8,8 +8,8 @@ from utils.decorators import admin_required, group_only
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded list of commands that can be disabled
-DISABLEABLE_COMMANDS = ['ban', 'kick', 'mute', 'warn', 'rules', 'notes', 'pin', 'locks']
+# Commands that can be disabled per-group
+DISABLEABLE_COMMANDS = ['tr', 'tts', 'id', 'info', 'ping', 'bam', 'kickme', 'schedule']
 NEVER_DISABLE = ['disable', 'enable', 'disabled', 'disabledel', 'cmds', 'start', 'help']
 
 @group_only
