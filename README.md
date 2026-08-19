@@ -51,7 +51,15 @@ sudo systemctl status senpais-bot
 sudo journalctl -u senpais-bot -f
 ```
 
-### 5. Add Bot to Group
+### 5. Update Server Code (Preserves Database & Notes)
+
+```bash
+cd ~/senpais-bot
+git pull
+sudo bash deploy/update.sh
+```
+
+### 6. Add Bot to Group
 
 1. Add your bot to your Telegram group
 2. Promote it to **admin** with ALL permissions
