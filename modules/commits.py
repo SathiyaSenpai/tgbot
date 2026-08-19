@@ -301,8 +301,8 @@ async def rmasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def checkasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Fetch current security patch levels from all tracked ROM orgs."""
-    msg = await update.effective_message.reply_text("Fetching security patch levels...")
+    """Fetch bleeding-edge platform security patch levels and device tree updates."""
+    msg = await update.effective_message.reply_text("Fetching security & tree updates...")
     db = context.bot_data.get("db")
     github = context.bot_data.get("github")
 
@@ -311,36 +311,50 @@ async def checkasb(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        sources = await db.fetchall("SELECT org, branch FROM asb_sources ORDER BY org, branch")
-        if not sources:
-            # Fallback to built-in defaults
-            sources = []
-            for org, branches in ASB_SOURCES.items():
-                for label, branch in branches.items():
-                    sources.append((org, branch))
+        sections = []
 
-        if not sources:
-            await msg.edit_text("No ASB sources configured. Use /addasb <org> <branch> to add one.")
-            return
+        # 1. Platform ASB (Google / LineageOS / crDroid)
+        asb_lines = []
+        p_22 = await github.check_asb("LineageOS", "lineage-22.2")
+        if p_22:
+            asb_lines.append(f"• <b>LineageOS 22.2 (Active):</b> <code>{p_22}</code>")
+        p_24 = await github.check_asb("LineageOS", "lineage-24.0")
+        if p_24:
+            asb_lines.append(f"• <b>LineageOS 24.0 (Bleeding):</b> <code>{p_24}</code>")
+        p_cr = await github.check_asb("crdroidandroid", "16.0")
+        if p_cr:
+            asb_lines.append(f"• <b>crDroid 16.0:</b> <code>{p_cr}</code>")
 
-        results = []
-        for org, branch in sources:
-            patch_date = await github.check_asb(org, branch)
-            if patch_date:
-                results.append(f"<b>{org}</b> ({branch}): <code>{patch_date}</code>")
-            else:
-                results.append(f"<b>{org}</b> ({branch}): <i>not found</i>")
+        if asb_lines:
+            sections.append("🛡️ <b>Platform Security Patch (ASB):</b>\n" + "\n".join(asb_lines))
 
-        final_text = "🔒 <b>Android Security Patch Levels:</b>\n\n" + "\n".join(results)
+        # 2. OnePlus SM8650 Device Trees (Gerrit)
+        dev_updates = await github.fetch_device_tree_updates(limit=4)
+        if dev_updates:
+            dev_lines = []
+            for d in dev_updates:
+                r_short = d['repo'].replace('android_device_oneplus_', '')
+                dev_lines.append(f"• <b>{r_short}</b> (<i>{d['branch']}</i>): {d['subject']} [<code>{d['updated']}</code>]")
+            sections.append("📱 <b>Device Trees & Firmware Drops (Gerrit):</b>\n" + "\n".join(dev_lines))
+
+        # 3. Qualcomm & Vendor Blobs Summary
+        vendor_info = (
+            "⚡ <b>Hardware & Vendor Blobs:</b>\n"
+            "• <b>Qualcomm / CodeLinaro:</b> SM8650 SoC Kernel & Hardware Trees\n"
+            "• <b>TheMuppets:</b> Proprietary vendor blobs (OOS/COS OTA firmware dumps)"
+        )
+        sections.append(vendor_info)
+
+        final_text = "🔒 <b>Security & Bleeding-Edge Updates:</b>\n\n" + "\n\n".join(sections)
         await msg.edit_text(final_text, parse_mode=ParseMode.HTML)
 
     except Exception as e:
-        logger.error(f"Error checking ASB: {e}")
-        await msg.edit_text("Failed to check security patch levels.")
+        logger.error(f"Error checking ASB & trees: {e}")
+        await msg.edit_text("Failed to check security patch & tree levels.")
 
 
 async def check_asb_job(context: ContextTypes.DEFAULT_TYPE):
-    """Background job: check for new security patches and DM the owner."""
+    """Background job: check for new security patches and device tree merges, then DM owner."""
     db = context.bot_data.get("db")
     github = context.bot_data.get("github")
 
@@ -348,45 +362,64 @@ async def check_asb_job(context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        sources = await db.fetchall("SELECT org, branch FROM asb_sources ORDER BY org, branch")
-        if not sources:
-            for org, branches in ASB_SOURCES.items():
-                for label, branch in branches.items():
-                    sources.append((org, branch))
-
-        for org, branch in sources:
+        # 1. Check Platform ASB bumps
+        for org, branch in [("LineageOS", "lineage-22.2"), ("LineageOS", "lineage-24.0"), ("crdroidandroid", "16.0")]:
             patch_date = await github.check_asb(org, branch)
             if not patch_date:
                 continue
 
             cache_key = f"asb_{org}_{branch}"
-            cached = await db.fetchval(
-                "SELECT value FROM bot_kv WHERE key = ?", (cache_key,)
-            )
+            cached = await db.fetchval("SELECT value FROM bot_kv WHERE key = ?", (cache_key,))
 
-            if cached == patch_date:
-                continue
-
-            await db.execute(
-                "INSERT INTO bot_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
-                (cache_key, patch_date, patch_date)
-            )
-            await db.commit()
-
-            if cached is not None:
-                msg = (
-                    f"🔒 <b>New Security Patch Detected!</b>\n\n"
-                    f"<b>{org}</b> ({branch})\n"
-                    f"Previous: <code>{cached}</code>\n"
-                    f"New: <code>{patch_date}</code>"
+            if cached != patch_date:
+                await db.execute(
+                    "INSERT INTO bot_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
+                    (cache_key, patch_date, patch_date)
                 )
-                try:
-                    await context.bot.send_message(chat_id=OWNER_ID, text=msg, parse_mode=ParseMode.HTML)
-                except TelegramError as e:
-                    logger.error(f"Failed to DM owner about ASB update: {e}")
+                await db.commit()
+
+                if cached is not None:
+                    msg = (
+                        f"🔒 <b>New Security Patch Detected!</b>\n\n"
+                        f"<b>{org}</b> ({branch})\n"
+                        f"Previous: <code>{cached}</code>\n"
+                        f"New: <code>{patch_date}</code>"
+                    )
+                    try:
+                        await context.bot.send_message(chat_id=OWNER_ID, text=msg, parse_mode=ParseMode.HTML)
+                    except TelegramError as e:
+                        logger.error(f"Failed to DM owner about ASB update: {e}")
+
+        # 2. Check Device Tree Merges on Gerrit (sm8650-common, avalon, audi)
+        dev_updates = await github.fetch_device_tree_updates(limit=5)
+        for d in dev_updates:
+            cid = str(d.get("id"))
+            cache_key = f"gerrit_tree_{cid}"
+            seen = await db.fetchval("SELECT value FROM bot_kv WHERE key = ?", (cache_key,))
+            if not seen:
+                await db.execute(
+                    "INSERT INTO bot_kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
+                    (cache_key, d.get("updated", ""), d.get("updated", ""))
+                )
+                await db.commit()
+
+                # If bot_kv already has other records, alert on new merge
+                count = await db.fetchval("SELECT count(*) FROM bot_kv WHERE key LIKE 'gerrit_tree_%'")
+                if count > 5:
+                    r_short = d['repo'].replace('android_device_oneplus_', '')
+                    alert = (
+                        f"📱 <b>New Device Tree Merge (Gerrit)!</b>\n\n"
+                        f"<b>{r_short}</b> @ {d['branch']}\n"
+                        f"📝 {d['subject']}\n"
+                        f"📅 {d['updated']}"
+                    )
+                    try:
+                        await context.bot.send_message(chat_id=OWNER_ID, text=alert, parse_mode=ParseMode.HTML)
+                    except TelegramError as e:
+                        logger.error(f"Failed to DM owner about tree update: {e}")
 
     except Exception as e:
-        logger.error(f"Error in ASB check job: {e}")
+        logger.error(f"Error in ASB & device check job: {e}")
 
 
 async def check_all_repos(context: ContextTypes.DEFAULT_TYPE):

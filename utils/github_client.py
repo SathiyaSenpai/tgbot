@@ -203,6 +203,61 @@ class GitHubClient:
 
         return None
 
+    async def fetch_device_tree_updates(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Fetch latest merged commits for SM8650, avalon, and audi trees from LineageOS Gerrit."""
+        try:
+            query = "(project:LineageOS/android_device_oneplus_avalon+OR+project:LineageOS/android_device_oneplus_audi+OR+project:LineageOS/android_device_oneplus_sm8650-common)+status:merged"
+            url = f"https://review.lineageos.org/changes/?q={query}&n={limit}"
+            resp = await self._client.get(url)
+            if resp.status_code == 200:
+                text = resp.text
+                if text.startswith(")]}'"):
+                    text = text[4:].strip()
+                import json
+                data = json.loads(text)
+                results = []
+                for c in data:
+                    proj = c.get("project", "").split("/")[-1]
+                    results.append({
+                        "id": c.get("id"),
+                        "repo": proj,
+                        "branch": c.get("branch"),
+                        "subject": c.get("subject"),
+                        "updated": c.get("updated", "")[:10],
+                        "number": c.get("_number"),
+                    })
+                return results
+        except Exception as e:
+            logger.debug(f"Failed to fetch device tree updates from Gerrit: {e}")
+        return []
+
+    async def fetch_gerrit_security_bumps(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Fetch latest merged security bumps across all branches from LineageOS Gerrit."""
+        try:
+            query = "project:LineageOS/android_build_release+status:merged+message:\"Bump Security String\""
+            url = f"https://review.lineageos.org/changes/?q={query}&n={limit}"
+            resp = await self._client.get(url)
+            if resp.status_code == 200:
+                text = resp.text
+                if text.startswith(")]}'"):
+                    text = text[4:].strip()
+                import json
+                data = json.loads(text)
+                results = []
+                for c in data:
+                    m = re.search(r"(\d{4}-\d{2}-\d{2})", c.get("subject", ""))
+                    if m:
+                        results.append({
+                            "patch_date": m.group(1),
+                            "branch": c.get("branch"),
+                            "subject": c.get("subject"),
+                            "updated": c.get("updated", "")[:10],
+                        })
+                return results
+        except Exception as e:
+            logger.debug(f"Failed to fetch Gerrit security bumps: {e}")
+        return []
+
     async def get_rate_limit(self) -> Dict[str, Any]:
         try:
             response = await self._client.get("/rate_limit")
