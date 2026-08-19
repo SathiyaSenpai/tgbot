@@ -5,7 +5,7 @@ Async SQLite database with WAL mode, memory-capped cache, and auto-migration.
 import aiosqlite
 import logging
 from pathlib import Path
-from typing import Optional, List, Any, Dict
+from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 

@@ -64,7 +64,7 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_info = await context.bot.get_chat(target_id)
         
-        text = f"👤 <b>User Info</b>\n"
+        text = "👤 <b>User Info</b>\n"
         text += f"<b>ID:</b> <code>{user_info.id}</code>\n"
         text += f"<b>First Name:</b> {user_info.first_name}\n"
         

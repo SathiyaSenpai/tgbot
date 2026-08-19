@@ -1,8 +1,7 @@
 import logging
 import random
-from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
-from telegram.ext import CommandHandler, ChatMemberHandler, CallbackQueryHandler, ContextTypes, filters
+from telegram.ext import CommandHandler, ChatMemberHandler, CallbackQueryHandler, ContextTypes
 from telegram.constants import ParseMode, ChatMemberStatus
 from telegram.error import TelegramError
 

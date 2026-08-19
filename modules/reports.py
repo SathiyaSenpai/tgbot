@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
 from telegram.constants import ParseMode
 from telegram.error import TelegramError

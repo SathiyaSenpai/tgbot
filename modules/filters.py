@@ -1,11 +1,10 @@
 import logging
 import shlex
-import re
 
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
-from telegram.constants import ParseMode, ChatType
-from telegram.error import TelegramError, BadRequest, Forbidden
+from telegram.constants import ParseMode
+from telegram.error import TelegramError
 
 from utils.decorators import admin_required, owner_required, group_only
 from utils.formatting import apply_fillings, extract_buttons
@@ -155,7 +154,7 @@ async def filter_scanner(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     chat = update.effective_chat
-    user = update.effective_user
+    update.effective_user
     db = context.bot_data["db"]
     text = update.effective_message.text.lower()
     

@@ -89,7 +89,7 @@ async def show_locks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     locked_types = [row[0] for row in rows]
-    await update.effective_message.reply_text(f"<b>Locked types:</b>\n- " + "\n- ".join(locked_types), parse_mode=ParseMode.HTML)
+    await update.effective_message.reply_text("<b>Locked types:</b>\n- " + "\n- ".join(locked_types), parse_mode=ParseMode.HTML)
 
 @group_only
 @admin_required

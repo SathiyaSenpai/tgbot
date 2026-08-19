@@ -1,12 +1,11 @@
 import logging
-from datetime import datetime, timezone
 from telegram import Update
-from telegram.constants import ParseMode, ChatType
+from telegram.constants import ParseMode
 from telegram.ext import CommandHandler, ContextTypes
 from telegram.error import TelegramError, BadRequest, Forbidden
 
-from utils.decorators import admin_required, owner_required, can_restrict, can_delete, group_only, invalidate_admin_cache
-from utils.helpers import parse_time, get_target_user, mention_html, can_act_on_user, truncate
+from utils.decorators import admin_required, can_restrict, group_only, invalidate_admin_cache
+from utils.helpers import parse_time, get_target_user, mention_html, can_act_on_user
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 from telegram import Update, ChatPermissions
 from telegram.constants import ParseMode
 from telegram.ext import CommandHandler, ContextTypes

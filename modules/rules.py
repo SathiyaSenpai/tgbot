@@ -2,8 +2,7 @@ import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, ContextTypes
-from telegram.constants import ParseMode, ChatType
-from telegram.error import TelegramError
+from telegram.constants import ParseMode
 
 from utils.decorators import admin_required, group_only
 

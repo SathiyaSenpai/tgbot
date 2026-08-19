@@ -1,7 +1,7 @@
 import logging
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters, ApplicationHandlerStop
-from telegram.constants import ParseMode, ChatType
+from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
 from utils.decorators import admin_required, group_only

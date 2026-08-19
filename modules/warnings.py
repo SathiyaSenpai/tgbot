@@ -3,7 +3,6 @@ from datetime import datetime, timezone, timedelta
 from telegram import Update, ChatPermissions
 from telegram.constants import ParseMode
 from telegram.ext import CommandHandler, ContextTypes
-from telegram.error import TelegramError, BadRequest, Forbidden
 
 from utils.decorators import admin_required, owner_required, can_restrict, group_only
 from utils.helpers import get_target_user, mention_html, can_act_on_user
@@ -164,7 +163,7 @@ async def warns_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for i, row in enumerate(rows, 1):
         reason = row[1] or "No reason"
         by = row[2]
-        date_str = row[3]
+        row[3]
         text += f"{i}. By <code>{by}</code>: {reason}\n"
         
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)

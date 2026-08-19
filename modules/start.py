@@ -7,12 +7,10 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
-    ContextTypes,
-    filters
+    ContextTypes
 )
 from telegram.constants import ParseMode, ChatType
 
-from config import OWNER_ID
 
 logger = logging.getLogger(__name__)
 

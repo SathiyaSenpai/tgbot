@@ -5,11 +5,11 @@ from datetime import datetime, timedelta
 
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, ContextTypes, filters
-from telegram.constants import ParseMode, ChatType
-from telegram.error import TelegramError, BadRequest, Forbidden
+from telegram.constants import ParseMode
+from telegram.error import TelegramError
 
 from utils.decorators import admin_required, owner_required, is_user_admin, group_only
-from utils.helpers import parse_time, mention_html
+from utils.helpers import mention_html
 
 logger = logging.getLogger(__name__)
 

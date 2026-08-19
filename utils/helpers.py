@@ -71,7 +71,7 @@ async def extract_user_and_reason(
             user_id = int(first_arg)
             reason = " ".join(args[1:]) if len(args) > 1 else None
         elif USERNAME_REGEX.match(first_arg):
-            username = first_arg.lstrip("@")
+            first_arg.lstrip("@")
             reason = " ".join(args[1:]) if len(args) > 1 else None
             return None, reason, None  # Will need to handle via @username
         else:

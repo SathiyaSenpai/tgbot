@@ -4,7 +4,7 @@ from telegram.ext import CommandHandler, ContextTypes
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
-from config import OWNER_ID, COMMIT_POLL_INTERVAL
+from config import COMMIT_POLL_INTERVAL
 from utils.decorators import admin_required, owner_required
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,7 @@ import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, ChatMemberHandler, MessageHandler, filters
 from telegram.constants import ParseMode
-from telegram.error import TelegramError, BadRequest, Forbidden
+from telegram.error import TelegramError, BadRequest
 
 from utils.decorators import admin_required, group_only
 from utils.formatting import format_welcome

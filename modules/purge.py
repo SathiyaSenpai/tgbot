@@ -1,7 +1,6 @@
 import logging
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
-from telegram.constants import ParseMode
 from telegram.error import TelegramError, BadRequest, Forbidden
 
 from utils.decorators import can_delete, group_only
@@ -58,7 +57,7 @@ async def do_purge(update: Update, context: ContextTypes.DEFAULT_TYPE, silent: b
             
     if not silent:
         try:
-            confirm = await msg.reply_text(f"Purge complete. Deleted roughly {deleted_count} messages.")
+            await msg.reply_text(f"Purge complete. Deleted roughly {deleted_count} messages.")
             # Optional: wait and delete the confirmation
         except Exception:
             pass

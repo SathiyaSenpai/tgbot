@@ -1,5 +1,4 @@
 import logging
-import asyncio
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
 from telegram.constants import ParseMode
@@ -116,11 +115,10 @@ async def cancel_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
             
         job_id = row[0]
-        jobs = context.job_queue.get_jobs_by_name(job_id) # Using job_id as string might not work, PTB jobs are accessed by id differently if stored
-        # For simplicity, we can loop through jobs if needed, but PTB 20 doesn't easily fetch by random UUID id.
-        # However, we can just remove it from DB and check in the job callback if it still exists.
+        if job_id:
+            for job in context.job_queue.get_jobs_by_name(job_id):
+                job.schedule_removal()
         
-        # A more robust way: set sent = 2 (cancelled)
         await db.execute("UPDATE scheduled_messages SET sent = 2 WHERE id = ?", (schedule_id,))
         await db.commit()
         
