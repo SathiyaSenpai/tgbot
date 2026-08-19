@@ -41,3 +41,4 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+patch_*.py\ntest_*.py\nfix_*.py
