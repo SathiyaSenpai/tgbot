@@ -23,7 +23,7 @@ def is_ai_comment(line):
         return False
         
     # Keep type ignores, linters, encodings
-    if content.startswith('type:') or content.startswith('pylint') or 'coding:' in content:
+    if content.startswith('type:') or content.startswith('pylint') or 'coding:'in content:
         return False
 
     words = content.split()
@@ -79,7 +79,7 @@ def clean_file(filepath):
         f.write('\n'.join(new_lines) + '\n')
 
 for root, dirs, files in os.walk('.'):
-    if '.venv' in root or '.git' in root or 'data' in root:
+    if '.venv'in root or '.git'in root or 'data'in root:
         continue
     for file in files:
         if file.endswith('.py'):

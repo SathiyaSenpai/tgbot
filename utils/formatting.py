@@ -27,7 +27,7 @@ def apply_fillings(
         first = user.first_name or ""
         last = user.last_name or ""
         fullname = f"{first} {last}".strip()
-        username = f"@{user.username}" if user.username else first
+        username = f"@{user.username}"if user.username else first
         mention = f'<a href="tg://user?id={user.id}">{_escape_html(first)}</a>'
 
         replacements.update({
@@ -91,12 +91,12 @@ def format_welcome(
 ) -> tuple[str, Optional[InlineKeyboardMarkup]]:
     formatted = apply_fillings(text, user=user, chat=chat, member_count=member_count)
 
-    if "{rules}" in formatted:
+    if "{rules}"in formatted:
         rules_url = f"https://t.me/{bot_username}?start=rules_{chat.id}"
         formatted = formatted.replace("{rules}", "")
         # We'll add a rules button
         formatted_clean, keyboard = extract_buttons(formatted)
-        rules_btn = InlineKeyboardButton("📜 Rules", url=rules_url)
+        rules_btn = InlineKeyboardButton("Rules", url=rules_url)
         if keyboard:
             keyboard.inline_keyboard.append([rules_btn])
         else:

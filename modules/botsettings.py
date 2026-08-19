@@ -20,14 +20,14 @@ async def setbotname(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /setbotname <name>")
         return
         
-    name = " ".join(context.args)
+    name = "".join(context.args)
     if len(name) > 64:
         await update.effective_message.reply_text("Name is too long (max 64 characters).")
         return
         
     try:
         await context.bot.set_my_name(name=name)
-        await update.effective_message.reply_text(f"✅ Bot name successfully updated to: <b>{name}</b>", parse_mode="HTML")
+        await update.effective_message.reply_text(f"Bot name successfully updated to: <b>{name}</b>", parse_mode="HTML")
     except TelegramError as e:
         logger.error(f"Error setting bot name: {e}")
         await update.effective_message.reply_text(f"Failed to update bot name: {e}")
@@ -38,10 +38,10 @@ async def setbotdesc(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /setbotdesc <text>")
         return
         
-    desc = " ".join(context.args)
+    desc = "".join(context.args)
     try:
         await context.bot.set_my_description(description=desc)
-        await update.effective_message.reply_text("✅ Bot description successfully updated.")
+        await update.effective_message.reply_text("Bot description successfully updated.")
     except TelegramError as e:
         logger.error(f"Error setting bot description: {e}")
         await update.effective_message.reply_text(f"Failed to update description: {e}")
@@ -52,10 +52,10 @@ async def setbotshortdesc(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /setbotshortdesc <text>")
         return
         
-    desc = " ".join(context.args)
+    desc = "".join(context.args)
     try:
         await context.bot.set_my_short_description(short_description=desc)
-        await update.effective_message.reply_text("✅ Bot short description successfully updated.")
+        await update.effective_message.reply_text("Bot short description successfully updated.")
     except TelegramError as e:
         logger.error(f"Error setting short description: {e}")
         await update.effective_message.reply_text(f"Failed to update short description: {e}")
@@ -72,7 +72,7 @@ async def setbotphoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
         photo_bytes = await photo_file.download_as_bytearray()
         
         await context.bot.set_my_profile_photo(photo=InputProfilePhotoStatic(photo=bytes(photo_bytes)))
-        await msg.reply_text("✅ Bot profile photo successfully updated.")
+        await msg.reply_text("Bot profile photo successfully updated.")
     except TelegramError as e:
         logger.error(f"Error setting bot photo: {e}")
         await msg.reply_text(f"Failed to update profile photo: {e}")
@@ -81,7 +81,7 @@ async def setbotphoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def removebotphoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.set_my_profile_photo(photo=None)
-        await update.effective_message.reply_text("✅ Bot profile photo removed.")
+        await update.effective_message.reply_text("Bot profile photo removed.")
     except TelegramError as e:
         logger.error(f"Error removing bot photo: {e}")
         await update.effective_message.reply_text(f"Failed to remove profile photo: {e}")

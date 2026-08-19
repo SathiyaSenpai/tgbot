@@ -64,7 +64,7 @@ async def setwelcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def resetwelcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = context.bot_data["db"]
     chat_id = update.effective_chat.id
-    default_text = "Welcome {mention} to {chatname}! 👋"
+    default_text = "Welcome {mention} to {chatname}! "
     
     await db.set_chat_setting(chat_id, "welcome_text", default_text)
     await db.commit()
@@ -180,7 +180,7 @@ async def chat_member_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clean_welcome = await db.get_chat_setting(chat.id, "clean_welcome", 0)
         
         if welcome_enabled:
-            welcome_text = await db.get_chat_setting(chat.id, "welcome_text", "Welcome {mention} to {chatname}! 👋")
+            welcome_text = await db.get_chat_setting(chat.id, "welcome_text", "Welcome {mention} to {chatname}! ")
             
             try:
                 formatted_text, markup = format_welcome(welcome_text, user, chat)

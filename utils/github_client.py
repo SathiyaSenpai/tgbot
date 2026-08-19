@@ -36,7 +36,7 @@ class GitHubClient:
             timeout=30.0,
             follow_redirects=True,
         )
-        logger.info("GitHub API client initialized" + (" (authenticated)" if self.token else " (unauthenticated)"))
+        logger.info("GitHub API client initialized"+ ("(authenticated)"if self.token else "(unauthenticated)"))
 
     async def close(self) -> None:
         if self._client:
@@ -153,13 +153,13 @@ class GitHubClient:
 
         files = commit.get("files", [])
         file_count = len(files) if files else ""
-        file_info = f"\n📁 {file_count} file(s) changed" if file_count else ""
+        file_info = f"\n {file_count} file(s) changed"if file_count else ""
 
         return (
-            f"📝 <code>{sha}</code> — {_escape_html(message)}\n"
-            f"👤 {_escape_html(author_name)}"
+            f"<code>{sha}</code> — {_escape_html(message)}\n"
+            f"{_escape_html(author_name)}"
             f"{file_info}\n"
-            f"🔗 <a href=\"{url}\">View commit</a>"
+            f"<a href=\"{url}\">View commit</a>"
         )
 
 

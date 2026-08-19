@@ -115,7 +115,7 @@ async def dmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     target_id = update.effective_message.reply_to_message.from_user.id
-    reason = " ".join(context.args) if context.args else ""
+    reason = "".join(context.args) if context.args else ""
     
     if not await can_act_on_user(context, chat.id, user.id, target_id):
         await update.effective_message.reply_text("Cannot act on this user.")
@@ -222,7 +222,7 @@ async def dtmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     time_str = context.args[0]
-    reason = " ".join(context.args[1:]) if len(context.args) > 1 else ""
+    reason = "".join(context.args[1:]) if len(context.args) > 1 else ""
     
     until_date = parse_time(time_str)
     if not until_date:

@@ -74,7 +74,7 @@ async def unlock_types(update: Update, context: ContextTypes.DEFAULT_TYPE):
         unlocked.append(l_type)
             
     await db.commit()
-    await update.effective_message.reply_text(f"Unlocked: {', '.join(unlocked)}" if unlocked else "No valid types provided.")
+    await update.effective_message.reply_text(f"Unlocked: {', '.join(unlocked)}"if unlocked else "No valid types provided.")
 
 @group_only
 @admin_required
@@ -89,7 +89,7 @@ async def show_locks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     locked_types = [row[0] for row in rows]
-    await update.effective_message.reply_text(f"<b>Locked types:</b>\n- " + "\n- ".join(locked_types), parse_mode=ParseMode.HTML)
+    await update.effective_message.reply_text(f"<b>Locked types:</b>\n- "+ "\n- ".join(locked_types), parse_mode=ParseMode.HTML)
 
 @group_only
 @admin_required
@@ -129,34 +129,34 @@ async def enforce_locks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     should_delete = False
     
-    if "url" in locked_types:
+    if "url"in locked_types:
         entities = msg.parse_entities(["url", "text_link"])
         if entities:
             should_delete = True
             
-    if "photo" in locked_types and msg.photo:
+    if "photo"in locked_types and msg.photo:
         should_delete = True
-    elif "video" in locked_types and msg.video:
+    elif "video"in locked_types and msg.video:
         should_delete = True
-    elif "audio" in locked_types and msg.audio:
+    elif "audio"in locked_types and msg.audio:
         should_delete = True
-    elif "document" in locked_types and msg.document:
+    elif "document"in locked_types and msg.document:
         should_delete = True
-    elif ("animation" in locked_types or "gif" in locked_types) and msg.animation:
+    elif ("animation"in locked_types or "gif"in locked_types) and msg.animation:
         should_delete = True
-    elif "sticker" in locked_types and msg.sticker:
+    elif "sticker"in locked_types and msg.sticker:
         should_delete = True
-    elif "voice" in locked_types and msg.voice:
+    elif "voice"in locked_types and msg.voice:
         should_delete = True
-    elif "contact" in locked_types and msg.contact:
+    elif "contact"in locked_types and msg.contact:
         should_delete = True
-    elif "location" in locked_types and msg.location:
+    elif "location"in locked_types and msg.location:
         should_delete = True
-    elif "forward" in locked_types and msg.forward_origin:
+    elif "forward"in locked_types and msg.forward_origin:
         should_delete = True
-    elif "poll" in locked_types and msg.poll:
+    elif "poll"in locked_types and msg.poll:
         should_delete = True
-    elif "inline" in locked_types and msg.via_bot:
+    elif "inline"in locked_types and msg.via_bot:
         should_delete = True
         
     if should_delete:

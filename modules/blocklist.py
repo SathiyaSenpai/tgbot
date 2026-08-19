@@ -38,7 +38,7 @@ async def add_blocklist(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /addblocklist <trigger> [reason] [{action}]", parse_mode=ParseMode.HTML)
         return
         
-    args_str = " ".join(context.args)
+    args_str = "".join(context.args)
     try:
         parsed_args = shlex.split(args_str)
     except ValueError:
@@ -60,9 +60,9 @@ async def add_blocklist(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.effective_message.reply_text("Invalid action. Use {nothing|warn|kick|ban|mute|tban|tmute}.", parse_mode=ParseMode.HTML)
                 return
             if len(parsed_args) > 2:
-                reason = " ".join(parsed_args[1:-1])
+                reason = "".join(parsed_args[1:-1])
         else:
-            reason = " ".join(parsed_args[1:])
+            reason = "".join(parsed_args[1:])
             
     await db.execute(
         "INSERT INTO blocklist (chat_id, trigger_text, reason, action) VALUES (?, ?, ?, ?) "
@@ -89,7 +89,7 @@ async def rm_blocklist(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("Usage: /rmblocklist <trigger>", parse_mode=ParseMode.HTML)
         return
         
-    args_str = " ".join(context.args)
+    args_str = "".join(context.args)
     try:
         parsed_args = shlex.split(args_str)
         trigger = parsed_args[0].lower()
@@ -119,7 +119,7 @@ async def list_blocklist(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for row in rows:
         trigger = row["trigger_text"]
         action = row["action"]
-        act_str = f" [{action}]" if action else ""
+        act_str = f"[{action}]"if action else ""
         text += f"- <code>{trigger}</code>{act_str}\n"
         
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -186,7 +186,7 @@ async def set_blocklist_reason(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.effective_message.reply_text("Usage: /setblocklistreason <reason>", parse_mode=ParseMode.HTML)
         return
         
-    reason = " ".join(context.args)
+    reason = "".join(context.args)
     await db.set_chat_setting(chat_id, "blocklist_reason", reason)
     await db.commit()
     

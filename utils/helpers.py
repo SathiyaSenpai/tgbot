@@ -63,19 +63,19 @@ async def extract_user_and_reason(
     if message.reply_to_message and message.reply_to_message.from_user:
         user_obj = message.reply_to_message.from_user
         user_id = user_obj.id
-        reason = " ".join(args) if args else None
+        reason = "".join(args) if args else None
     elif args:
         first_arg = args[0]
 
         if USER_ID_REGEX.match(first_arg):
             user_id = int(first_arg)
-            reason = " ".join(args[1:]) if len(args) > 1 else None
+            reason = "".join(args[1:]) if len(args) > 1 else None
         elif USERNAME_REGEX.match(first_arg):
             username = first_arg.lstrip("@")
-            reason = " ".join(args[1:]) if len(args) > 1 else None
+            reason = "".join(args[1:]) if len(args) > 1 else None
             return None, reason, None  # Will need to handle via @username
         else:
-            reason = " ".join(args)
+            reason = "".join(args)
 
     if user_id and not user_obj:
         try:
@@ -96,14 +96,14 @@ async def get_target_user(
 
     if message.reply_to_message and message.reply_to_message.from_user:
         target = message.reply_to_message.from_user
-        reason = " ".join(args) if args else None
+        reason = "".join(args) if args else None
         return target.id, reason, target.first_name
 
     if not args:
         return None, None, None
 
     first_arg = args[0]
-    reason = " ".join(args[1:]) if len(args) > 1 else None
+    reason = "".join(args[1:]) if len(args) > 1 else None
 
     if USER_ID_REGEX.match(first_arg):
         user_id = int(first_arg)
@@ -118,7 +118,7 @@ async def get_target_user(
         # Can't directly resolve username to user_id via Bot API without the user being in chat
         return None, reason, username
 
-    return None, " ".join(args), None
+    return None, "".join(args), None
 
 
 async def is_user_in_chat(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
@@ -136,7 +136,7 @@ async def can_act_on_user(
     bot_id = context.bot.id
 
     if target_id == bot_id:
-        await update.effective_message.reply_text("❌ I'm not going to do that to myself!")
+        await update.effective_message.reply_text("I'm not going to do that to myself!")
         return False
 
     try:
@@ -145,11 +145,11 @@ async def can_act_on_user(
         return True  # User not in chat, might still be actionable
 
     if target_member.status == ChatMemberStatus.OWNER:
-        await update.effective_message.reply_text("❌ I can't do that to the chat owner.")
+        await update.effective_message.reply_text("I can't do that to the chat owner.")
         return False
 
     if target_member.status == ChatMemberStatus.ADMINISTRATOR:
-        await update.effective_message.reply_text("❌ I can't do that to another admin.")
+        await update.effective_message.reply_text("I can't do that to another admin.")
         return False
 
     return True

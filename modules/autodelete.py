@@ -57,7 +57,7 @@ async def cleanmsg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.set_chat_setting(chat_id, "clean_messages", val)
         await db.commit()
         
-        msg = await update.effective_message.reply_text(f"🧹 Bot message auto-deletion set to: <b>{val.upper()}</b>", parse_mode="HTML")
+        msg = await update.effective_message.reply_text(f"Bot message auto-deletion set to: <b>{val.upper()}</b>", parse_mode="HTML")
         if val == "on":
             await auto_delete_message(msg, 300)
     except Exception as e:
@@ -71,7 +71,7 @@ async def keepmsg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await db.set_chat_setting(chat_id, "clean_messages", "off")
         await db.commit()
-        await update.effective_message.reply_text("🛑 Bot message auto-deletion disabled.")
+        await update.effective_message.reply_text("Bot message auto-deletion disabled.")
     except Exception as e:
         logger.error(f"Error disabling cleanmsg: {e}")
 
@@ -89,7 +89,7 @@ async def cleancommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.set_chat_setting(chat_id, "clean_commands", val)
         await db.commit()
         
-        msg = await update.effective_message.reply_text(f"🧹 Command message auto-deletion set to: <b>{val.upper()}</b>", parse_mode="HTML")
+        msg = await update.effective_message.reply_text(f"Command message auto-deletion set to: <b>{val.upper()}</b>", parse_mode="HTML")
         
         clean_msgs = await db.get_chat_setting(chat_id, "clean_messages", "off")
         if clean_msgs == "on":
@@ -105,6 +105,6 @@ async def keepcommand(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await db.set_chat_setting(chat_id, "clean_commands", "off")
         await db.commit()
-        await update.effective_message.reply_text("🛑 Command message auto-deletion disabled.")
+        await update.effective_message.reply_text("Command message auto-deletion disabled.")
     except Exception as e:
         logger.error(f"Error disabling cleancommand: {e}")

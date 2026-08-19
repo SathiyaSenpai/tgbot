@@ -13,7 +13,7 @@ async def notify_admins(update: Update, context: ContextTypes.DEFAULT_TYPE, repo
     chat = update.effective_chat
     
     report_text = (
-        f"🚨 <b>Report in {chat.title}</b>\n\n"
+        f"<b>Report in {chat.title}</b>\n\n"
         f"<b>Reporter:</b> {mention_html(reporter.id, reporter.first_name)}\n"
         f"<b>Reported User:</b> {mention_html(reported.id, reported.first_name)}\n"
         f"<b>Message:</b> {message_text}\n"
@@ -102,7 +102,7 @@ async def reports_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.set_chat_setting(chat_id, 'reports_enabled', val)
     await db.commit()
     
-    status = "enabled" if val else "disabled"
+    status = "enabled"if val else "disabled"
     await update.effective_message.reply_text(f"Reports are now {status}.", parse_mode=ParseMode.HTML)
 
 def register(app):

@@ -52,7 +52,7 @@ async def post_init(application: Application) -> None:
 
     me = await application.bot.get_me()
     logger.info(f"Bot: @{me.username} ({me.first_name}) [ID: {me.id}]")
-    logger.info("Senpai's Bot initialized successfully! ✅")
+    logger.info("Senpai's Bot initialized successfully! ")
 
 
 async def post_shutdown(application: Application) -> None:

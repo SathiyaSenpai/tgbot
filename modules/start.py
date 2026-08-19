@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Help categories with their commands
 HELP_CATEGORIES = {
     "admin": {
-        "title": "👑 Admin Commands",
+        "title": "Admin Commands",
         "commands": (
             "/ban - Ban a user\n"
             "/sban - Silent ban\n"
@@ -36,7 +36,7 @@ HELP_CATEGORIES = {
         ),
     },
     "mute": {
-        "title": "🔇 Mute Commands",
+        "title": "Mute Commands",
         "commands": (
             "/mute - Mute user\n"
             "/smute - Silent mute\n"
@@ -46,7 +46,7 @@ HELP_CATEGORIES = {
         ),
     },
     "warn": {
-        "title": "⚠️ Warning Commands",
+        "title": "️ Warning Commands",
         "commands": (
             "/warn - Warn user\n"
             "/dwarn - Warn + delete msg\n"
@@ -59,7 +59,7 @@ HELP_CATEGORIES = {
         ),
     },
     "blocklist": {
-        "title": "🚫 Blocklist",
+        "title": "Blocklist",
         "commands": (
             "/addblocklist - Add trigger\n"
             "/rmblocklist - Remove trigger\n"
@@ -69,7 +69,7 @@ HELP_CATEGORIES = {
         ),
     },
     "filters": {
-        "title": "🔍 Filters",
+        "title": "Filters",
         "commands": (
             "/filter - Set filter\n"
             "/filters - List filters\n"
@@ -78,7 +78,7 @@ HELP_CATEGORIES = {
         ),
     },
     "notes": {
-        "title": "📝 Notes",
+        "title": "Notes",
         "commands": (
             "/save - Save note\n"
             "/get or #name - Get note\n"
@@ -88,7 +88,7 @@ HELP_CATEGORIES = {
         ),
     },
     "welcome": {
-        "title": "👋 Greetings",
+        "title": "Greetings",
         "commands": (
             "/welcome - Toggle welcome\n"
             "/setwelcome - Set message\n"
@@ -99,7 +99,7 @@ HELP_CATEGORIES = {
         ),
     },
     "rules": {
-        "title": "📜 Rules",
+        "title": "Rules",
         "commands": (
             "/rules - View rules\n"
             "/setrules - Set rules\n"
@@ -109,7 +109,7 @@ HELP_CATEGORIES = {
         ),
     },
     "pins": {
-        "title": "📌 Pins",
+        "title": "Pins",
         "commands": (
             "/pin - Pin message\n"
             "/unpin - Unpin message\n"
@@ -119,7 +119,7 @@ HELP_CATEGORIES = {
         ),
     },
     "purge": {
-        "title": "🗑️ Purge",
+        "title": "️ Purge",
         "commands": (
             "/purge - Delete messages\n"
             "/spurge - Silent purge\n"
@@ -127,7 +127,7 @@ HELP_CATEGORIES = {
         ),
     },
     "misc": {
-        "title": "🎲 Misc",
+        "title": "Misc",
         "commands": (
             "/kickme - Kick yourself\n"
             "/bam - Fake ban (fun)\n"
@@ -137,7 +137,7 @@ HELP_CATEGORIES = {
         ),
     },
     "flood": {
-        "title": "🌊 Antiflood",
+        "title": "Antiflood",
         "commands": (
             "/flood - Show settings\n"
             "/setflood - Set limit\n"
@@ -145,7 +145,7 @@ HELP_CATEGORIES = {
         ),
     },
     "locks": {
-        "title": "🔒 Locks",
+        "title": "Locks",
         "commands": (
             "/lock - Lock type\n"
             "/unlock - Unlock type\n"
@@ -154,7 +154,7 @@ HELP_CATEGORIES = {
         ),
     },
     "captcha": {
-        "title": "🤖 CAPTCHA",
+        "title": "CAPTCHA",
         "commands": (
             "/captcha - Toggle CAPTCHA\n"
             "/captchamode - Set mode\n"
@@ -163,7 +163,7 @@ HELP_CATEGORIES = {
         ),
     },
     "connect": {
-        "title": "🔗 Connection",
+        "title": "Connection",
         "commands": (
             "/connect - Connect to group\n"
             "/disconnect - Disconnect\n"
@@ -171,7 +171,7 @@ HELP_CATEGORIES = {
         ),
     },
     "approve": {
-        "title": "✅ Approvals",
+        "title": "Approvals",
         "commands": (
             "/approve - Approve user\n"
             "/unapprove - Remove approval\n"
@@ -180,7 +180,7 @@ HELP_CATEGORIES = {
         ),
     },
     "commits": {
-        "title": "📡 Commit Tracker",
+        "title": "Commit Tracker",
         "commands": (
             "/addrepo - Track repo\n"
             "/rmrepo - Untrack repo\n"
@@ -201,7 +201,7 @@ HELP_CATEGORIES = {
         ),
     },
     "settings": {
-        "title": "⚙️ Settings",
+        "title": "️ Settings",
         "commands": (
             "/disable - Disable command\n"
             "/enable - Enable command\n"
@@ -221,9 +221,9 @@ def _build_help_keyboard(current: str = None) -> InlineKeyboardMarkup:
     row = []
     for key in keys:
         cat = HELP_CATEGORIES[key]
-        emoji = cat["title"].split(" ")[0]
-        label = cat["title"].split(" ", 1)[1] if " " in cat["title"] else key
-        short_label = emoji + " " + (label[:10] if len(label) > 10 else label)
+        emoji = cat["title"].split("")[0]
+        label = cat["title"].split("", 1)[1] if ""in cat["title"] else key
+        short_label = emoji + ""+ (label[:10] if len(label) > 10 else label)
         if key == current:
             short_label = f"• {short_label} •"
         row.append(InlineKeyboardButton(short_label, callback_data=f"help_{key}"))
@@ -240,11 +240,11 @@ def _build_help_keyboard(current: str = None) -> InlineKeyboardMarkup:
 
 
 MAIN_HELP_TEXT = (
-    "👋 <b>Hi! I'm Senpai's Bot</b>\n\n"
+    "<b>Hi! I'm Senpai's Bot</b>\n\n"
     "I'm a group management bot with commit tracking features.\n\n"
-    "🔹 <b>Add me to your group</b> as admin with full permissions\n"
-    "🔹 Use the buttons below to explore commands\n"
-    "🔹 Use /help &lt;category&gt; for quick text help\n\n"
+    "<b>Add me to your group</b> as admin with full permissions\n"
+    "Use the buttons below to explore commands\n"
+    "Use /help &lt;category&gt; for quick text help\n\n"
     "<i>Tap a category below to see its commands:</i>"
 )
 
@@ -258,7 +258,7 @@ def register(app):
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type != ChatType.PRIVATE:
         await update.effective_message.reply_text(
-            "👋 I'm alive! Use /help to see commands.",
+            "I'm alive! Use /help to see commands.",
             parse_mode=ParseMode.HTML,
         )
         return
@@ -276,7 +276,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 rules = await db.get_chat_setting(chat_id, "rules_text")
                 if rules:
                     await update.effective_message.reply_text(
-                        f"📋 <b>Group Rules:</b>\n\n{rules}",
+                        f"<b>Group Rules:</b>\n\n{rules}",
                         parse_mode=ParseMode.HTML,
                     )
                 else:
@@ -284,7 +284,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         "ℹ️ No rules have been set for this group yet."
                     )
             except (ValueError, TypeError):
-                await update.effective_message.reply_text("❌ Invalid rules link.")
+                await update.effective_message.reply_text("Invalid rules link.")
             return
 
         # Deep-link: note_{chat_id}_{notename}
@@ -316,7 +316,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 await send_func(
                                     update.effective_chat.id,
                                     media_id,
-                                    caption=content if media_type != "sticker" else None,
+                                    caption=content if media_type != "sticker"else None,
                                     parse_mode=ParseMode.HTML if content else None,
                                 )
                                 return
@@ -332,7 +332,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     else:
                         await update.effective_message.reply_text("ℹ️ Note not found.")
                 except (ValueError, TypeError):
-                    await update.effective_message.reply_text("❌ Invalid note link.")
+                    await update.effective_message.reply_text("Invalid note link.")
             return
 
         # Deep-link: connect_{chat_id}
@@ -353,16 +353,16 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     except Exception:
                         chat_title = str(chat_id)
                     await update.effective_message.reply_text(
-                        f"✅ Connected to <b>{chat_title}</b>.\n"
+                        f"Connected to <b>{chat_title}</b>.\n"
                         f"You can now run admin commands here and they'll apply to that group.",
                         parse_mode=ParseMode.HTML,
                     )
                 else:
                     await update.effective_message.reply_text(
-                        "❌ You are not an admin in that group."
+                        "You are not an admin in that group."
                     )
             except (ValueError, TypeError):
-                await update.effective_message.reply_text("❌ Invalid connect link.")
+                await update.effective_message.reply_text("Invalid connect link.")
             return
 
     # Default /start message
@@ -386,7 +386,7 @@ async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
         await update.effective_message.reply_text(
-            f"❌ Unknown category: {category}\n"
+            f"Unknown category: {category}\n"
             f"Available: {', '.join(HELP_CATEGORIES.keys())}"
         )
         return
