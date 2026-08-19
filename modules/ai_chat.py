@@ -82,4 +82,4 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Gemini API Error: {e}")
         # Fallback response
-        await msg.reply_text("Tch... I'm a bit tired right now. Ask me later.")
+        await msg.reply_text(f"Tch... I'm a bit tired right now. Ask me later.\n\n[Debug Error: {e}]")
