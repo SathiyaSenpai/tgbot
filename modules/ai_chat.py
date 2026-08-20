@@ -1,7 +1,7 @@
 """
 Senpai's Bot - AI Chat Handler
-Listens for mentions/replies and responds using the multi-model AI engine.
-Also handles GIF sending via Tenor API.
+Listens for mentions/replies/names and responds using the multi-model AI engine.
+Also handles GIF sending via Giphy API.
 """
 import logging
 import random
@@ -48,6 +48,7 @@ def register(app):
 async def fetch_gif(query: str) -> str | None:
     """Fetch a contextually appropriate GIF URL from Giphy."""
     if not GIPHY_API_KEY:
+        logger.warning("[AI Chat] GIPHY_API_KEY not configured — skipping GIF fetch.")
         return None
     try:
         params = {
@@ -56,16 +57,28 @@ async def fetch_gif(query: str) -> str | None:
             "limit": 15,
             "rating": "pg-13"
         }
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get("https://api.giphy.com/v1/gifs/search", params=params)
+        
         if resp.status_code == 200:
             results = resp.json().get("data", [])
             if results:
                 pick = random.choice(results)
-                gif_url = pick.get("images", {}).get("original", {}).get("url")
+                images = pick.get("images", {})
+                # Prefer downsized/medium/mp4 for fast loading in Telegram
+                gif_url = (
+                    images.get("downsized_medium", {}).get("url")
+                    or images.get("fixed_height", {}).get("url")
+                    or images.get("original", {}).get("url")
+                    or images.get("original", {}).get("mp4")
+                )
                 return gif_url
+            else:
+                logger.warning(f"[AI Chat] Giphy returned 0 results for query '{query}'")
+        else:
+            logger.error(f"[AI Chat] Giphy API error {resp.status_code}: {resp.text}")
     except Exception as e:
-        logger.error(f"[AI Chat] GIF fetch error: {e}")
+        logger.error(f"[AI Chat] GIF fetch exception: {e}")
     return None
 
 
@@ -93,20 +106,27 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not raw_text:
         return
 
-    # Determine if this message is directed at the bot
-    is_mentioned = f"@{bot_username}" in raw_text
-    is_replied_to = (
+    # Check triggers (case-insensitive)
+    is_private = update.effective_chat.type == ChatType.PRIVATE
+    is_mentioned = bool(bot_username and f"@{bot_username.lower()}" in raw_text.lower())
+    is_name_called = "scarlet" in raw_text.lower()
+    is_replied_to = bool(
         msg.reply_to_message
         and msg.reply_to_message.from_user
         and msg.reply_to_message.from_user.id == bot_id
     )
-    is_private = update.effective_chat.type == ChatType.PRIVATE
 
-    if not (is_mentioned or is_replied_to or is_private):
+    # In groups, only respond if mentioned, replied to, or named
+    if not (is_private or is_mentioned or is_name_called or is_replied_to):
         return
 
-    # Clean up the message text
-    user_text = raw_text.replace(f"@{bot_username}", "").strip()
+    # Clean up username mentions from user text
+    user_text = raw_text
+    if bot_username:
+        # Remove @username case-insensitively
+        import re
+        user_text = re.sub(rf"@{re.escape(bot_username)}", "", user_text, flags=re.IGNORECASE).strip()
+    
     if not user_text:
         user_text = "hey"
 
@@ -122,30 +142,24 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_text=user_text,
         )
 
-        # Send the text reply
-        await msg.reply_text(reply_text)
+        # 1. Send the text reply
+        if reply_text:
+            await msg.reply_text(reply_text)
 
-        # Optionally send a contextually relevant GIF
-        if send_gif:
-            if not GIPHY_API_KEY:
-                logger.error("[AI Chat] Wanted to send GIF, but GIPHY_API_KEY is missing!")
-            else:
-                logger.info(f"[AI Chat] Fetching GIF for query: '{gif_query}'")
-                gif_url = await fetch_gif(gif_query)
-                if gif_url:
-                    logger.info(f"[AI Chat] Successfully fetched GIF: {gif_url}")
-                    try:
-                        await context.bot.send_animation(
-                            chat_id=chat_id,
-                            animation=gif_url,
-                            reply_to_message_id=msg.message_id,
-                        )
-                        logger.info("[AI Chat] Successfully sent GIF to Telegram.")
-                    except Exception as tg_err:
-                        logger.error(f"[AI Chat] Telegram failed to send GIF ({gif_url}): {tg_err}")
-                else:
-                    logger.error(f"[AI Chat] fetch_gif returned None for query '{gif_query}'")
+        # 2. Optionally send a contextually relevant GIF
+        if send_gif and GIPHY_API_KEY:
+            logger.info(f"[AI Chat] Fetching Giphy GIF for query: '{gif_query}'")
+            gif_url = await fetch_gif(gif_query)
+            if gif_url:
+                try:
+                    await context.bot.send_animation(
+                        chat_id=chat_id,
+                        animation=gif_url,
+                        reply_to_message_id=msg.message_id,
+                    )
+                    logger.info("[AI Chat] Successfully sent GIF reaction.")
+                except Exception as tg_err:
+                    logger.error(f"[AI Chat] Telegram send_animation error ({gif_url}): {tg_err}")
 
     except Exception as e:
-        logger.error(f"[AI Chat] Unexpected error in handle_chat: {e}")
-        # Silent fail — no user-facing error message
+        logger.error(f"[AI Chat] Error in handle_chat: {e}", exc_info=True)

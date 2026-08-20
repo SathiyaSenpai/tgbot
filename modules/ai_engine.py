@@ -1,11 +1,13 @@
 """
 Senpai's Bot - AI Engine
 Multi-model fallback system: Gemini → Groq → OpenRouter
-If one provider's quota is exhausted, automatically switches to the next.
+If one provider's quota is exhausted or times out, automatically switches to the next.
 """
+import asyncio
 import logging
 import time
 import random
+import re
 from collections import deque
 from typing import Optional
 
@@ -45,18 +47,17 @@ RESPONSE STYLE:
 - Never be sycophantic. Don't say "great question!" or "sure!" — just answer.
 - Occasional dry humor or deadpan is good. Don't force it though.
 
-GIF HANDLING (CRITICAL RULE):
+GIF HANDLING:
 - If the user sends a GIF (e.g. "[sends a GIF]"), YOU MUST REPLY WITH A GIF.
-- To send a GIF, include exactly this syntax anywhere in your response: [gif: search query]
-- Example: "why are you sending me cats [gif: anime girl sighing]"
-- The search query should be simple, like "cat judging" or "anime girl tired".
-- Do NOT use the [gif: ...] tag randomly unless the user sent a GIF first, or if the moment is perfectly suited for a reaction gif (rare).
+- To send a GIF, include exactly this tag anywhere in your text: [gif: search query]
+- Example: "why are you sending me cats [gif: anime girl sigh]"
+- The query should be short: "cat judging", "anime girl tired", "anime smug", etc.
+- Do NOT use the [gif: ...] tag on normal text messages unless a reaction gif fits the moment perfectly.
 """
 
 # ──────────────────────────────────────────────
 # CONVERSATION MEMORY
 # ──────────────────────────────────────────────
-# Stores last N messages per chat_id so she can follow conversations
 _conversation_memory: dict[int, deque] = {}
 MEMORY_SIZE = 6  # Remember last 6 turns (3 user + 3 assistant)
 
@@ -94,35 +95,6 @@ def get_current_mood() -> str:
 
 
 # ──────────────────────────────────────────────
-# GIF TRIGGER LOGIC
-# ──────────────────────────────────────────────
-# The AI can signal that a GIF should be sent by including a special marker in its response.
-# We parse this out and handle it separately so GIFs are contextually appropriate.
-
-GIF_TRIGGER_PROBABILITY = 0.08  # 8% chance of triggering a GIF on any reply
-GIF_CATEGORIES = ["anime girl", "cat", "anime bored", "anime sigh", "anime smug"]
-
-def should_send_gif() -> bool:
-    return random.random() < GIF_TRIGGER_PROBABILITY
-
-def pick_gif_query(text: str) -> str:
-    """Pick a contextually appropriate GIF search query based on message content."""
-    text_lower = text.lower()
-    if any(w in text_lower for w in ["cat", "neko", "meow", "kitty"]):
-        return random.choice(["cat smug", "cat judging", "cat whatever"])
-    if any(w in text_lower for w in ["tired", "sleep", "awake", "morning", "bed"]):
-        return random.choice(["anime girl tired", "anime sleepy", "anime yawn"])
-    if any(w in text_lower for w in ["hi", "hello", "hey", "sup", "yo"]):
-        return random.choice(["anime girl wave", "anime nod", "cat hello"])
-    if any(w in text_lower for w in ["ok", "sure", "fine", "whatever", "yeah"]):
-        return random.choice(["anime girl whatever", "anime shrug", "cat shrug"])
-    if any(w in text_lower for w in ["haha", "lol", "lmao", "funny"]):
-        return random.choice(["anime girl laugh", "cat laughing"])
-    # Default — pick a random fitting category
-    return random.choice(GIF_CATEGORIES)
-
-
-# ──────────────────────────────────────────────
 # PROVIDER COOLDOWN TRACKING
 # ──────────────────────────────────────────────
 COOLDOWN_SECONDS = 3600  # 1 hour cooldown after quota exhaustion
@@ -153,7 +125,6 @@ def init_gemini(api_key: str):
         import google.generativeai as genai
         genai.configure(api_key=api_key)
 
-        # Pick the best available non-omni flash model
         try:
             available = [m.name for m in genai.list_models() if "generateContent" in m.supported_generation_methods]
             preferred = ["models/gemini-2.5-flash", "models/gemini-2.0-flash", "models/gemini-1.5-flash-latest"]
@@ -176,16 +147,21 @@ async def _call_gemini(messages: list[dict]) -> Optional[str]:
     if not _gemini_model or not is_provider_cooled_down("gemini"):
         return None
     try:
-        # Build prompt from conversation history
         prompt_parts = []
         for m in messages:
             prefix = f"{m['name']}: " if m.get("name") else ""
             prompt_parts.append(f"{prefix}{m['text']}")
         prompt = "\n".join(prompt_parts)
 
-        response = await _gemini_model.generate_content_async(prompt)
+        # 10 second timeout to prevent hangs
+        response = await asyncio.wait_for(
+            _gemini_model.generate_content_async(prompt),
+            timeout=10.0
+        )
         if response and response.text:
             return response.text.strip()
+    except asyncio.TimeoutError:
+        logger.warning("[AI Engine] Gemini call timed out (10s)")
     except Exception as e:
         err_str = str(e)
         if "429" in err_str or "quota" in err_str.lower():
@@ -207,6 +183,7 @@ def init_groq(api_key: str):
         _groq_client = AsyncOpenAI(
             api_key=api_key,
             base_url="https://api.groq.com/openai/v1",
+            timeout=10.0,
         )
         logger.info("[AI Engine] Groq initialized (llama-3.3-70b-versatile)")
     except Exception as e:
@@ -223,14 +200,19 @@ async def _call_groq(messages: list[dict]) -> Optional[str]:
             content = f"{m['name']}: {m['text']}" if m.get("name") else m["text"]
             openai_messages.append({"role": m["role"], "content": content})
 
-        response = await _groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=openai_messages,
-            temperature=0.75,
-            max_tokens=200,
+        response = await asyncio.wait_for(
+            _groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=openai_messages,
+                temperature=0.75,
+                max_tokens=200,
+            ),
+            timeout=10.0
         )
         if response.choices:
             return response.choices[0].message.content.strip()
+    except asyncio.TimeoutError:
+        logger.warning("[AI Engine] Groq call timed out (10s)")
     except Exception as e:
         err_str = str(e)
         if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
@@ -253,6 +235,7 @@ def init_openrouter(api_key: str):
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1",
             default_headers={"HTTP-Referer": "https://t.me/SenpaisBot", "X-Title": "Senpais Bot"},
+            timeout=10.0,
         )
         logger.info("[AI Engine] OpenRouter initialized (free router)")
     except Exception as e:
@@ -269,14 +252,19 @@ async def _call_openrouter(messages: list[dict]) -> Optional[str]:
             content = f"{m['name']}: {m['text']}" if m.get("name") else m["text"]
             openai_messages.append({"role": m["role"], "content": content})
 
-        response = await _openrouter_client.chat.completions.create(
-            model="openrouter/auto",
-            messages=openai_messages,
-            temperature=0.75,
-            max_tokens=200,
+        response = await asyncio.wait_for(
+            _openrouter_client.chat.completions.create(
+                model="openrouter/auto",
+                messages=openai_messages,
+                temperature=0.75,
+                max_tokens=200,
+            ),
+            timeout=10.0
         )
         if response.choices:
             return response.choices[0].message.content.strip()
+    except asyncio.TimeoutError:
+        logger.warning("[AI Engine] OpenRouter call timed out (10s)")
     except Exception as e:
         err_str = str(e)
         if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
@@ -313,19 +301,16 @@ async def generate_reply(
     user_name: str,
     user_text: str,
 ) -> tuple[str, bool, str]:
-    '''
+    """
     Generate a reply using the best available provider.
     Returns (reply_text, should_send_gif, gif_query).
-    '''
-    # Add mood context to the user message
+    """
     mood = get_current_mood()
     contextualized_text = f"[Current vibe: {mood}]\n{user_name}: {user_text}"
 
-    # Build message list with history
     history = get_memory(chat_id)
     messages = history + [{"role": "user", "name": user_name, "text": contextualized_text}]
 
-    # Try providers in order
     reply = None
     for provider_fn, name in [
         (_call_gemini, "gemini"),
@@ -336,13 +321,13 @@ async def generate_reply(
             continue
         reply = await provider_fn(messages)
         if reply:
+            logger.info(f"[AI Engine] Reply successfully generated by: {name}")
             break
 
     if not reply:
         reply = _offline_response()
 
-    # Parse [gif: query] from the LLM's reply
-    import re
+    # Parse [gif: query] tag
     gif_match = re.search(r'\[gif:\s*(.*?)\]', reply, re.IGNORECASE)
     send_gif = False
     gif_query = ""
@@ -352,15 +337,16 @@ async def generate_reply(
         gif_query = gif_match.group(1).strip()
         reply = re.sub(r'\[gif:\s*.*?\]', '', reply, flags=re.IGNORECASE).strip()
     
-    # Fallback rules
-    if "[sends a GIF]" in user_text and not send_gif:
+    # If the user sent a GIF, enforce sending a GIF back
+    if "[sends a GIF]" in user_text:
         send_gif = True
-        gif_query = random.choice(["anime girl sigh", "anime girl stare", "cat looking"])
+        if not gif_query:
+            gif_query = random.choice(["anime girl sigh", "anime girl stare", "cat looking", "anime smug"])
         
     if not gif_query and send_gif:
         gif_query = "anime girl"
         
-    # Extremely rare random text GIF (3%)
+    # Extremely rare spontaneous text GIF (3%)
     if not send_gif and random.random() < 0.03:
         send_gif = True
         gif_query = random.choice(["anime girl", "cat"])
@@ -368,7 +354,7 @@ async def generate_reply(
     if not reply:
         reply = "..."
 
-    # Update memory (store the clean reply)
+    # Update memory
     add_to_memory(chat_id, "user", user_name, user_text)
     add_to_memory(chat_id, "assistant", "Scarlet", reply)
 
