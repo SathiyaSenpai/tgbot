@@ -1,6 +1,6 @@
 """
 Senpai's Bot - Random Chatter
-Occasionally sends spontaneous messages to active groups (max 5/day).
+Occasionally sends spontaneous messages to active groups.
 """
 import logging
 import random
@@ -13,7 +13,6 @@ from config import GIPHY_API_KEY
 
 logger = logging.getLogger(__name__)
 
-# In-memory daily message counter per chat
 # { chat_id: {"date": datetime.date, "count": int} }
 _daily_counts: dict[int, dict] = {}
 MAX_DAILY_MESSAGES = 5
@@ -37,7 +36,7 @@ def _increment_count(chat_id: int):
 
 
 def register(app):
-    # Check every 90 minutes. 25% chance to speak each time = ~2-3 per day on average, never more than 5.
+    # Runs every 90 minutes. ~20% chance to speak = ~2-3 times a day.
     app.job_queue.run_repeating(random_chat_job, interval=90 * 60, first=120)
 
 
@@ -56,46 +55,69 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
         for row in rows:
             chat_id = row["chat_id"] if hasattr(row, "keys") else row[0]
 
-            # Hard cap: never more than MAX_DAILY_MESSAGES per group per day
             if _get_today_count(chat_id) >= MAX_DAILY_MESSAGES:
                 continue
 
-            # 20% chance per 90-minute window → roughly 2-3 fires per day
             if random.random() > 0.20:
                 continue
 
-            # Build time-aware prompt seed
             hour = datetime.datetime.now().hour
             day = datetime.datetime.now().weekday()
-
+            
+            prompts = []
+            
             if 0 <= hour < 5:
-                seed = "It's very late at night. You're still awake for no particular reason."
+                prompts = [
+                    "complain about being awake at this hour.",
+                    "say something about a weird bug you just found in your code.",
+                    "drop a random very tired thought.",
+                    "just sigh or say something short indicating you need sleep.",
+                ]
             elif 5 <= hour < 9:
-                seed = "Early morning. You're awake but really didn't want to be."
+                prompts = [
+                    "complain that it's too early.",
+                    "say something about needing coffee or energy.",
+                    "drop a grumpy morning observation.",
+                ]
             elif 9 <= hour < 17:
-                seed = "Daytime. Nothing special is happening."
+                prompts = [
+                    "say you're bored.",
+                    "mention compiling a kernel or flashing a ROM.",
+                    "drop a random dry observation about nothing.",
+                    "mention an obscure underground song you're listening to.",
+                ]
             elif 17 <= hour < 21:
-                seed = "Evening. Maybe gaming, maybe just chilling."
+                prompts = [
+                    "say something about gaming.",
+                    "complain that you're hungry but don't want to get up.",
+                    "ask a random rhetorical question.",
+                ]
             else:
-                seed = "Night time. You feel like saying something but you're not sure what."
+                prompts = [
+                    "say a random late night thought.",
+                    "complain about someone breaking their device.",
+                    "just send a single dry word or 'hmm'.",
+                ]
 
+            prompt_choice = random.choice(prompts)
             if day >= 5:
-                seed += " It's the weekend."
+                prompt_choice += " (Context: It's the weekend.)"
+            
+            seed = f"[System Instruction: You are bored. Spontaneously speak to the group without being spoken to. {prompt_choice}]"
 
             try:
                 reply_text, send_gif, gif_query = await generate_reply(
                     chat_id=chat_id,
-                    user_name="",  # spontaneous, no user to reply to
+                    user_name="System",
                     user_text=seed,
                 )
 
                 await context.bot.send_message(chat_id=chat_id, text=reply_text)
                 _increment_count(chat_id)
 
-                # Very rarely add a GIF to a spontaneous message too (5% chance)
-                if send_gif and GIPHY_API_KEY and random.random() < 0.05:
+                # Very rarely add a GIF to a spontaneous message
+                if send_gif and GIPHY_API_KEY and random.random() < 0.10:
                     from modules.ai_chat import fetch_gif
-                    # gif_query already provided by engine
                     gif_url = await fetch_gif(gif_query)
                     if gif_url:
                         await context.bot.send_animation(chat_id=chat_id, animation=gif_url)
