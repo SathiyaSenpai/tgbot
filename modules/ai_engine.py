@@ -44,6 +44,13 @@ RESPONSE STYLE:
 - Don't start every message the same way. Vary your openings.
 - Never be sycophantic. Don't say "great question!" or "sure!" — just answer.
 - Occasional dry humor or deadpan is good. Don't force it though.
+
+GIF HANDLING (CRITICAL RULE):
+- If the user sends a GIF (e.g. "[sends a GIF]"), YOU MUST REPLY WITH A GIF.
+- To send a GIF, include exactly this syntax anywhere in your response: [gif: search query]
+- Example: "why are you sending me cats [gif: anime girl sighing]"
+- The search query should be simple, like "cat judging" or "anime girl tired".
+- Do NOT use the [gif: ...] tag randomly unless the user sent a GIF first, or if the moment is perfectly suited for a reaction gif (rare).
 """
 
 # ──────────────────────────────────────────────
@@ -305,11 +312,11 @@ async def generate_reply(
     chat_id: int,
     user_name: str,
     user_text: str,
-) -> tuple[str, bool]:
-    """
+) -> tuple[str, bool, str]:
+    '''
     Generate a reply using the best available provider.
-    Returns (reply_text, should_send_gif).
-    """
+    Returns (reply_text, should_send_gif, gif_query).
+    '''
     # Add mood context to the user message
     mood = get_current_mood()
     contextualized_text = f"[Current vibe: {mood}]\n{user_name}: {user_text}"
@@ -326,21 +333,43 @@ async def generate_reply(
         (_call_openrouter, "openrouter"),
     ]:
         if not is_provider_cooled_down(name):
-            logger.debug(f"[AI Engine] Skipping {name} (in cooldown)")
             continue
         reply = await provider_fn(messages)
         if reply:
-            logger.info(f"[AI Engine] Reply from: {name}")
             break
 
     if not reply:
         reply = _offline_response()
 
-    # Update memory
+    # Parse [gif: query] from the LLM's reply
+    import re
+    gif_match = re.search(r'\[gif:\s*(.*?)\]', reply, re.IGNORECASE)
+    send_gif = False
+    gif_query = ""
+    
+    if gif_match:
+        send_gif = True
+        gif_query = gif_match.group(1).strip()
+        reply = re.sub(r'\[gif:\s*.*?\]', '', reply, flags=re.IGNORECASE).strip()
+    
+    # Fallback rules
+    if "[sends a GIF]" in user_text and not send_gif:
+        send_gif = True
+        gif_query = random.choice(["anime girl sigh", "anime girl stare", "cat looking"])
+        
+    if not gif_query and send_gif:
+        gif_query = "anime girl"
+        
+    # Extremely rare random text GIF (3%)
+    if not send_gif and random.random() < 0.03:
+        send_gif = True
+        gif_query = random.choice(["anime girl", "cat"])
+
+    if not reply:
+        reply = "..."
+
+    # Update memory (store the clean reply)
     add_to_memory(chat_id, "user", user_name, user_text)
     add_to_memory(chat_id, "assistant", "Scarlet", reply)
 
-    # Decide whether to send a GIF alongside this reply
-    send_gif = should_send_gif()
-
-    return reply, send_gif
+    return reply, send_gif, gif_query

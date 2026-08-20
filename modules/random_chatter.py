@@ -8,7 +8,7 @@ import datetime
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError
 
-from modules.ai_engine import generate_reply, pick_gif_query
+from modules.ai_engine import generate_reply
 from config import GIPHY_API_KEY
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
                 seed += " It's the weekend."
 
             try:
-                reply_text, send_gif = await generate_reply(
+                reply_text, send_gif, gif_query = await generate_reply(
                     chat_id=chat_id,
                     user_name="",  # spontaneous, no user to reply to
                     user_text=seed,
@@ -95,7 +95,7 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
                 # Very rarely add a GIF to a spontaneous message too (5% chance)
                 if send_gif and GIPHY_API_KEY and random.random() < 0.05:
                     from modules.ai_chat import fetch_gif
-                    gif_query = pick_gif_query(reply_text)
+                    # gif_query already provided by engine
                     gif_url = await fetch_gif(gif_query)
                     if gif_url:
                         await context.bot.send_animation(chat_id=chat_id, animation=gif_url)

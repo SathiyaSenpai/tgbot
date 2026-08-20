@@ -13,7 +13,7 @@ from telegram.constants import ChatType
 from config import GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY, GIPHY_API_KEY
 from modules.ai_engine import (
     init_gemini, init_groq, init_openrouter,
-    generate_reply, pick_gif_query,
+    generate_reply
 )
 
 logger = logging.getLogger(__name__)
@@ -140,7 +140,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_chat_action(chat_id=chat_id, action="typing")
 
-        reply_text, send_gif = await generate_reply(
+        reply_text, send_gif, gif_query = await generate_reply(
             chat_id=chat_id,
             user_name=user_name,
             user_text=user_text,
@@ -151,7 +151,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Optionally send a contextually relevant GIF
         if send_gif and GIPHY_API_KEY:
-            gif_query = pick_gif_query(user_text + " " + reply_text)
+            # gif_query already provided by engine
             gif_url = await fetch_gif(gif_query)
             if gif_url:
                 await context.bot.send_animation(
