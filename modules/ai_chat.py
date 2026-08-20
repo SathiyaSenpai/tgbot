@@ -37,7 +37,10 @@ else:
 
 def register(app):
     app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_chat),
+        MessageHandler(
+            (filters.TEXT | filters.ANIMATION | filters.Sticker.ALL | filters.PHOTO) & ~filters.COMMAND, 
+            handle_chat
+        ),
         group=5,
     )
 
@@ -92,14 +95,30 @@ async def fetch_gif(query: str) -> str | None:
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.effective_message
-    if not msg or not msg.text:
+    if not msg:
         return
 
     bot_id = context.bot.id
     bot_username = context.bot.username or ""
 
+    # Determine text content based on message type
+    raw_text = msg.text or msg.caption or ""
+    
+    if msg.animation:
+        raw_text += " [sends a GIF]"
+    elif msg.sticker:
+        emoji = msg.sticker.emoji or ""
+        raw_text += f" [sends a sticker {emoji}]"
+    elif msg.photo:
+        raw_text += " [sends a photo]"
+
+    raw_text = raw_text.strip()
+    
+    if not raw_text:
+        return
+
     # Determine if this message is directed at the bot
-    is_mentioned = f"@{bot_username}" in msg.text
+    is_mentioned = f"@{bot_username}" in raw_text
     is_replied_to = (
         msg.reply_to_message
         and msg.reply_to_message.from_user
@@ -111,7 +130,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Clean up the message text
-    user_text = msg.text.replace(f"@{bot_username}", "").strip()
+    user_text = raw_text.replace(f"@{bot_username}", "").strip()
     if not user_text:
         user_text = "hey"
 
