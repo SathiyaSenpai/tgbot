@@ -140,6 +140,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=chat_id,
             user_name=user_name,
             user_text=user_text,
+            db=context.bot_data.get("db"),
         )
 
         # 1. Send the text reply

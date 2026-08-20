@@ -9,7 +9,7 @@ from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -144,9 +144,26 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
     sent INTEGER DEFAULT 0
 );
 
+-- Per-group persistent AI rules/instructions (learned from user commands)
+-- Zero extra API cost: injected directly into system prompt at the start of each request.
+CREATE TABLE IF NOT EXISTS chat_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id INTEGER NOT NULL,
+    rule TEXT NOT NULL,
+    added_by INTEGER,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active INTEGER DEFAULT 1
+);
 
+CREATE INDEX IF NOT EXISTS idx_chat_rules_chat ON chat_rules(chat_id, active);
 
-
+-- Per-group persona overrides (e.g. language, nickname, tone)
+CREATE TABLE IF NOT EXISTS chat_persona (
+    chat_id INTEGER PRIMARY KEY,
+    preferred_language TEXT,       -- e.g. 'Tamil', 'Hindi'
+    nickname_for_user TEXT,        -- e.g. 'bro', 'da'
+    extra_notes TEXT               -- freeform additional instructions
+);
 
 """
 

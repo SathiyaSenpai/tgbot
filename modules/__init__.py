@@ -31,6 +31,7 @@ def register_all_handlers(app: Application) -> None:
             ("misc", "modules.misc"),
             ("connect", "modules.connect"),
             ("translation", "modules.translation"),
+            ("chat_rules", "modules.chat_rules"),
             ("ai_chat", "modules.ai_chat"),
             ("random_chatter", "modules.random_chatter"),
         ]

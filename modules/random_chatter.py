@@ -110,6 +110,7 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
                     chat_id=chat_id,
                     user_name="System",
                     user_text=seed,
+                    db=db,
                 )
 
                 await context.bot.send_message(chat_id=chat_id, text=reply_text)

@@ -144,23 +144,21 @@ def init_gemini(api_key: str):
         _gemini_client = None
 
 
-async def _call_gemini(history: list[dict], current_text: str) -> Optional[str]:
+async def _call_gemini(history: list[dict], current_text: str, system_prompt: str = SYSTEM_PROMPT) -> Optional[str]:
     if not _gemini_client or not is_provider_cooled_down("gemini"):
         return None
     try:
         from google import genai
         from google.genai import types
 
-        # Build properly structured multi-turn contents
         contents = []
         for m in history:
             role = "user" if m["role"] == "user" else "model"
             contents.append(types.Content(role=role, parts=[types.Part(text=m["text"])]))
-        # Add current user message
         contents.append(types.Content(role="user", parts=[types.Part(text=current_text)]))
 
         config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=system_prompt,
             temperature=0.75,
             max_output_tokens=200,
         )
@@ -210,11 +208,11 @@ def init_groq(api_key: str):
         _groq_client = None
 
 
-async def _call_groq(history: list[dict], current_text: str) -> Optional[str]:
+async def _call_groq(history: list[dict], current_text: str, system_prompt: str = SYSTEM_PROMPT) -> Optional[str]:
     if not _groq_client or not is_provider_cooled_down("groq"):
         return None
     try:
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": system_prompt}]
         for m in history:
             role = "user" if m["role"] == "user" else "assistant"
             messages.append({"role": role, "content": m["text"]})
@@ -264,11 +262,11 @@ def init_openrouter(api_key: str):
         _openrouter_client = None
 
 
-async def _call_openrouter(history: list[dict], current_text: str) -> Optional[str]:
+async def _call_openrouter(history: list[dict], current_text: str, system_prompt: str = SYSTEM_PROMPT) -> Optional[str]:
     if not _openrouter_client or not is_provider_cooled_down("openrouter"):
         return None
     try:
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": system_prompt}]
         for m in history:
             role = "user" if m["role"] == "user" else "assistant"
             messages.append({"role": role, "content": m["text"]})
@@ -323,14 +321,25 @@ async def generate_reply(
     chat_id: int,
     user_name: str,
     user_text: str,
+    db=None,
 ) -> tuple[str, bool, str]:
     """
     Returns (reply_text, should_send_gif, gif_query).
+    Pass `db` to inject per-group learned rules into the system prompt (zero API cost).
     """
-    mood = get_current_mood()
-    # Current turn text — include username and mood hint for the model
-    current_text = f"[Mood: {mood}]\n{user_name}: {user_text}"
+    # Build per-chat system prompt (base + any learned rules injected inline)
+    effective_system_prompt = SYSTEM_PROMPT
+    if db is not None:
+        try:
+            from modules.chat_rules import get_rules_for_prompt
+            rules_block = await get_rules_for_prompt(chat_id, db)
+            if rules_block:
+                effective_system_prompt = SYSTEM_PROMPT + rules_block
+        except Exception as e:
+            logger.debug(f"[AI Engine] Could not load chat rules: {e}")
 
+    mood = get_current_mood()
+    current_text = f"[Mood: {mood}]\n{user_name}: {user_text}"
     history = get_memory(chat_id)
 
     reply = None
@@ -341,7 +350,7 @@ async def generate_reply(
     ]:
         if not is_provider_cooled_down(name):
             continue
-        reply = await provider_fn(history, current_text)
+        reply = await provider_fn(history, current_text, effective_system_prompt)
         if reply:
             logger.info(f"[AI Engine] Reply by: {name}")
             break
@@ -383,3 +392,4 @@ async def generate_reply(
     add_to_memory(chat_id, "assistant", reply)
 
     return reply, send_gif, gif_query
+
