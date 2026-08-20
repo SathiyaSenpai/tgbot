@@ -143,12 +143,8 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db=context.bot_data.get("db"),
         )
 
-        # 1. Send the text reply
-        if reply_text:
-            await msg.reply_text(reply_text)
-
-        # 2. Optionally send a contextually relevant GIF
         if send_gif and GIPHY_API_KEY:
+            # GIF-only mode: when replying with a GIF, skip the text entirely
             logger.info(f"[AI Chat] Fetching Giphy GIF for query: '{gif_query}'")
             gif_url = await fetch_gif(gif_query)
             if gif_url:
@@ -161,6 +157,17 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     logger.info("[AI Chat] Successfully sent GIF reaction.")
                 except Exception as tg_err:
                     logger.error(f"[AI Chat] Telegram send_animation error ({gif_url}): {tg_err}")
+                    # GIF failed — fall back to text so the user gets some response
+                    if reply_text:
+                        await msg.reply_text(reply_text)
+            else:
+                # Giphy returned nothing — fall back to text
+                if reply_text:
+                    await msg.reply_text(reply_text)
+        else:
+            # No GIF — just send the text
+            if reply_text:
+                await msg.reply_text(reply_text)
 
     except Exception as e:
         logger.error(f"[AI Chat] Error in handle_chat: {e}", exc_info=True)
