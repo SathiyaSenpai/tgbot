@@ -11,7 +11,7 @@ load_dotenv(Path(__file__).parent / ".env")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 # Your Telegram user ID (superadmin). Get it by messaging @userinfobot
-OWNER_ID = int(os.getenv("OWNER_ID", "0"))
+OWNER_ID = int(os.getenv("OWNER_ID") or "0")
 
 # Personal Access Token for higher rate limits (5000/hr vs 60/hr)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
@@ -31,7 +31,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 GIPHY_API_KEY = os.getenv("GIPHY_API_KEY", "")
 
 # How often to poll GitHub for new commits (in minutes)
-COMMIT_POLL_INTERVAL = int(os.getenv("COMMIT_POLL_INTERVAL", "5"))
+COMMIT_POLL_INTERVAL = int(os.getenv("COMMIT_POLL_INTERVAL") or "5")
 
 DB_PATH = os.getenv("DB_PATH", str(Path(__file__).parent / "data" / "bot.db"))
 

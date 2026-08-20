@@ -138,54 +138,6 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.effective_message.reply_text("Invalid rules link.")
             return
 
-        # Deep-link: note_{chat_id}_{notename}
-        if payload.startswith("note_"):
-            parts = payload[5:].split("_", 1)
-            if len(parts) == 2:
-                try:
-                    chat_id = int(parts[0])
-                    note_name = parts[1]
-                    row = await db.fetchone(
-                        "SELECT content, media_type, media_id FROM notes WHERE chat_id = ? AND name = ?",
-                        (chat_id, note_name),
-                    )
-                    if row:
-                        content = row[0] or ""
-                        media_type = row[1]
-                        media_id = row[2]
-                        if media_type and media_id:
-                            send_func = {
-                                "photo": context.bot.send_photo,
-                                "video": context.bot.send_video,
-                                "document": context.bot.send_document,
-                                "animation": context.bot.send_animation,
-                                "sticker": context.bot.send_sticker,
-                                "voice": context.bot.send_voice,
-                                "audio": context.bot.send_audio,
-                            }.get(media_type)
-                            if send_func:
-                                await send_func(
-                                    update.effective_chat.id,
-                                    media_id,
-                                    caption=content if media_type != "sticker" else None,
-                                    parse_mode=ParseMode.HTML if content else None,
-                                )
-                                return
-                        if content:
-                            from utils.formatting import extract_buttons, apply_fillings
-                            content = apply_fillings(content, user=update.effective_user)
-                            text, keyboard = extract_buttons(content)
-                            await update.effective_message.reply_text(
-                                text,
-                                parse_mode=ParseMode.HTML,
-                                reply_markup=keyboard,
-                            )
-                    else:
-                        await update.effective_message.reply_text("Note not found.")
-                except (ValueError, TypeError):
-                    await update.effective_message.reply_text("Invalid note link.")
-            return
-
         # Deep-link: connect_{chat_id}
         if payload.startswith("connect_"):
             try:

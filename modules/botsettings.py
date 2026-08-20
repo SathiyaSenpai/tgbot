@@ -85,7 +85,7 @@ async def setbotphoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @owner_required
 async def removebotphoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        await context.bot.set_my_profile_photo(photo=None)
+        await context.bot.remove_my_profile_photo()
         await update.effective_message.reply_text("✅ Bot profile photo removed.")
     except TelegramError as e:
         logger.error(f"Error removing bot photo: {e}")

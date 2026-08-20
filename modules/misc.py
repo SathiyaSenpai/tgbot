@@ -36,13 +36,26 @@ async def kickme(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_message.reply_text("I couldn't kick you. Make sure I have admin rights to restrict users.")
 
 async def bam(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    target_id, target_name = await get_target_user(update, context)
+    target_id, _ = await get_target_user(update, context)
     
     if not target_id:
         await update.effective_message.reply_text("Please specify a user to bam.")
         return
-        
-    text = f"🔨 {target_name} has been bammed! (just kidding 😄)"
+
+    target_name = "someone"
+    msg = update.effective_message
+    if msg.reply_to_message and msg.reply_to_message.from_user:
+        target_name = msg.reply_to_message.from_user.first_name or "someone"
+    else:
+        try:
+            target_chat = await context.bot.get_chat(target_id)
+            target_name = target_chat.first_name or "someone"
+        except Exception:
+            target_name = str(target_id)
+
+    safe_name = target_name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    target_mention = f'<a href="tg://user?id={target_id}">{safe_name}</a>'
+    text = f"🔨 {target_mention} has been bammed! (just kidding 😄)"
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):

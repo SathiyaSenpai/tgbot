@@ -65,24 +65,6 @@ CREATE TABLE IF NOT EXISTS users (
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
-CREATE INDEX IF NOT EXISTS idx_warnings_chat_user ON warnings(chat_id, user_id);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- Disabled commands
 CREATE TABLE IF NOT EXISTS disabled_commands (
     chat_id INTEGER NOT NULL,

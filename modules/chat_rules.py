@@ -6,7 +6,7 @@ Rules are injected into the system prompt — zero cost on free tier.
 import logging
 import re
 from telegram import Update
-from telegram.ext import MessageHandler, CommandHandler, filters, ContextTypes
+from telegram.ext import MessageHandler, CommandHandler, PrefixHandler, filters, ContextTypes
 from telegram.constants import ChatType, ParseMode
 
 from utils.decorators import admin_required
@@ -40,8 +40,11 @@ MAX_RULE_LENGTH = 120  # Characters — keeps prompt compact
 
 def register(app):
     app.add_handler(CommandHandler("rules", show_rules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "rules", show_rules), group=0)
     app.add_handler(CommandHandler("clearrules", clear_rules), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "clearrules", clear_rules), group=0)
     app.add_handler(CommandHandler("delrule", delete_rule), group=0)
+    app.add_handler(PrefixHandler(['!', '?'], "delrule", delete_rule), group=0)
     # Listen to all text messages to detect instructions (low group number = before ai_chat)
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, detect_instruction),

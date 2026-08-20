@@ -75,7 +75,8 @@ async def welcome_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
             
             mention = user_mention(new_member)
-            final_text = f"{mention} {reply_text}"
+            safe_reply = (reply_text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            final_text = f"{mention} {safe_reply}"
             
             await context.bot.send_message(
                 chat_id=chat_id,

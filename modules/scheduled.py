@@ -65,6 +65,7 @@ async def _reload_schedules_on_startup(context: ContextTypes.DEFAULT_TYPE):
                 _send_scheduled_message,
                 delay,
                 data={"chat_id": chat_id, "text": message_text, "schedule_id": schedule_id},
+                name=f"sched_{schedule_id}",
                 chat_id=chat_id,
                 user_id=user_id
             )
@@ -162,11 +163,12 @@ async def schedule_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             _send_scheduled_message,
             delay,
             data={"chat_id": chat_id, "text": message_text, "schedule_id": schedule_id},
+            name=f"sched_{schedule_id}",
             chat_id=chat_id,
             user_id=user_id,
         )
 
-        await db.execute("UPDATE scheduled_messages SET job_id = ? WHERE id = ?", (job.id, schedule_id))
+        await db.execute("UPDATE scheduled_messages SET job_id = ? WHERE id = ?", (f"sched_{schedule_id}", schedule_id))
         await db.commit()
 
         await update.effective_message.reply_text(
@@ -193,7 +195,7 @@ async def _send_scheduled_message(context: ContextTypes.DEFAULT_TYPE):
             if schedule_id:
                 await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE id = ?", (schedule_id,))
             else:
-                await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE job_id = ?", (job.id,))
+                await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE job_id = ?", (job.name or job.id,))
             await db.commit()
     except Exception as e:
         logger.error(f"[Scheduled] Failed to deliver message to {chat_id}: {e}")
@@ -253,10 +255,13 @@ async def cancel_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.effective_message.reply_text(f"No pending message with ID #{schedule_id} for <b>{chat_title}</b>.", parse_mode=ParseMode.HTML)
             return
 
-        job_id = row[0]
-        if job_id:
-            for job in context.job_queue.get_jobs_by_name(job_id):
-                job.schedule_removal()
+        job_name = f"sched_{schedule_id}"
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if not jobs and row[0]:
+            jobs = context.job_queue.get_jobs_by_name(row[0])
+
+        for job in jobs:
+            job.schedule_removal()
 
         await db.execute("UPDATE scheduled_messages SET sent = 2 WHERE id = ?", (schedule_id,))
         await db.commit()

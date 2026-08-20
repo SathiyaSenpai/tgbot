@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from telegram import Update
-from telegram.ext import CommandHandler, PrefixHandler, ContextTypes
+from telegram.ext import CommandHandler, PrefixHandler, MessageHandler, ContextTypes, filters
 from telegram.error import TelegramError
 
 from utils.decorators import admin_required
@@ -17,6 +17,7 @@ def register(app):
     app.add_handler(PrefixHandler(['!', '?'], "cleancommand", cleancommand), group=0)
     app.add_handler(CommandHandler("keepcommand", keepcommand), group=0)
     app.add_handler(PrefixHandler(['!', '?'], "keepcommand", keepcommand), group=0)
+    app.add_handler(MessageHandler(filters.COMMAND & filters.ChatType.GROUPS, delete_command_message), group=-1)
 
 # Keep a strong reference to background tasks so the Python Garbage Collector
 # doesn't destroy them while they are sleeping (which would prevent deletion).
