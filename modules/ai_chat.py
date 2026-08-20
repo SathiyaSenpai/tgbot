@@ -43,9 +43,27 @@ def register(app):
 
 
 async def fetch_gif(query: str) -> str | None:
-    """Fetch a contextually appropriate GIF URL from Tenor."""
+    """Fetch a contextually appropriate GIF URL from Giphy."""
     if not GIPHY_API_KEY:
         return None
+    try:
+        params = {
+            "q": query,
+            "api_key": GIPHY_API_KEY,
+            "limit": 15,
+            "rating": "pg-13"
+        }
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get("https://api.giphy.com/v1/gifs/search", params=params)
+        if resp.status_code == 200:
+            results = resp.json().get("data", [])
+            if results:
+                pick = random.choice(results)
+                gif_url = pick.get("images", {}).get("original", {}).get("url")
+                return gif_url
+    except Exception as e:
+        logger.warning(f"[AI Chat] GIF fetch error: {e}")
+    return None
     try:
         params = {
             "q": query,
