@@ -54,8 +54,9 @@ async def fetch_gif(query: str) -> str | None:
         params = {
             "q": query,
             "api_key": GIPHY_API_KEY,
-            "limit": 15,
-            "rating": "pg-13"
+            "limit": 20,
+            "rating": "pg-13",
+            "lang": "en",
         }
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get("https://api.giphy.com/v1/gifs/search", params=params)
@@ -63,9 +64,10 @@ async def fetch_gif(query: str) -> str | None:
         if resp.status_code == 200:
             results = resp.json().get("data", [])
             if results:
-                pick = random.choice(results)
+                # Pick from top 5 results — high relevance, still some variety
+                top = results[:5]
+                pick = random.choice(top)
                 images = pick.get("images", {})
-                # Prefer downsized/medium/mp4 for fast loading in Telegram
                 gif_url = (
                     images.get("downsized_medium", {}).get("url")
                     or images.get("fixed_height", {}).get("url")
@@ -94,10 +96,17 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     raw_text = msg.text or msg.caption or ""
     
     if msg.animation:
-        raw_text += " [sends a GIF]"
+        gif_title = msg.animation.file_name or ""
+        # Use the filename as a content hint for the LLM — strip extension, humanise
+        gif_hint = gif_title.replace("_", " ").replace("-", " ").rsplit(".", 1)[0].strip()
+        if gif_hint and len(gif_hint) > 2:
+            raw_text += f" [sends a GIF: {gif_hint}]"
+        else:
+            raw_text += " [sends a GIF]"
     elif msg.sticker:
         emoji = msg.sticker.emoji or ""
-        raw_text += f" [sends a sticker {emoji}]"
+        set_name = msg.sticker.set_name or ""
+        raw_text += f" [sends a sticker {emoji} from {set_name}]".rstrip("from ")
     elif msg.photo:
         raw_text += " [sends a photo]"
 

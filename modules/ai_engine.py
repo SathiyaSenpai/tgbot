@@ -456,18 +456,63 @@ async def generate_reply(
         gif_query = gif_match.group(1).strip()
         reply = re.sub(r'\[gif:\s*.*?\]', '', reply, flags=re.IGNORECASE).strip()
 
-    # Always send a GIF back if user sent one
-    if "[sends a GIF]" in user_text and not send_gif:
+    # If user sent a GIF and LLM didn't pick a query, build a contextual fallback
+    is_gif_message = "[sends a GIF" in user_text  # matches both "[sends a GIF]" and "[sends a GIF: hint]"
+    if is_gif_message and not send_gif:
         send_gif = True
-        gif_query = random.choice(["anime girl sigh", "anime smug", "cat judging", "anime girl stare"])
+        # Extract any hint from "[sends a GIF: hint_text]" and use it to guide the query
+        hint_match = re.search(r'\[sends a GIF:\s*(.*?)\]', user_text, re.IGNORECASE)
+        if hint_match:
+            hint = hint_match.group(1).strip().lower()
+            # Map common GIF themes to precise Scarlet-style reactions
+            if any(w in hint for w in ["happy", "celebrate", "party", "dance", "yay"]):
+                gif_query = random.choice(["anime girl unimpressed", "anime girl side eye", "cat staring"])
+            elif any(w in hint for w in ["sad", "cry", "tears", "sob"]):
+                gif_query = random.choice(["anime girl awkward", "cat confused", "anime girl look away"])
+            elif any(w in hint for w in ["laugh", "lol", "haha", "funny", "meme"]):
+                gif_query = random.choice(["anime girl smug", "anime unimpressed", "cat judging"])
+            elif any(w in hint for w in ["angry", "mad", "rage", "furious"]):
+                gif_query = random.choice(["anime girl calm stare", "cat slow blink", "anime girl sigh"])
+            elif any(w in hint for w in ["love", "heart", "cute", "uwu", "aww"]):
+                gif_query = random.choice(["anime girl embarrassed", "anime girl ignore", "cat ignoring"])
+            elif any(w in hint for w in ["shocked", "surprise", "nani", "what", "omg"]):
+                gif_query = random.choice(["anime girl deadpan", "cat blinking", "anime girl whatever"])
+            elif any(w in hint for w in ["sleep", "tired", "bored", "zzz"]):
+                gif_query = random.choice(["anime girl tired", "cat sleeping", "anime girl yawn"])
+            else:
+                # Use the hint directly as a search term
+                gif_query = f"anime girl {hint[:30]}" if len(hint) < 30 else "anime girl reaction"
+        else:
+            # No hint — pick a fitting kuudere reaction
+            gif_query = random.choice([
+                "anime girl unimpressed",
+                "anime girl side eye",
+                "cat judging you",
+                "anime smug face",
+                "anime girl stare",
+                "cat slow blink",
+                "anime girl sigh",
+                "nani anime",
+            ])
 
     if send_gif and not gif_query:
-        gif_query = "anime girl"
+        gif_query = "anime girl reaction"
 
-    # Rare spontaneous GIF on plain text (3%)
+    # Rare spontaneous GIF on plain text (3%) — precise, personality-driven queries
     if not send_gif and random.random() < 0.03:
         send_gif = True
-        gif_query = random.choice(["anime girl", "cat"])
+        gif_query = random.choice([
+            "anime girl bored",
+            "cat staring into void",
+            "anime girl typing",
+            "hollow knight gif",
+            "celeste game",
+            "anime girl late night",
+            "cat judging",
+            "anime smug face",
+            "lofi anime girl",
+            "anime girl coffee",
+        ])
 
     if not reply:
         reply = "..."
