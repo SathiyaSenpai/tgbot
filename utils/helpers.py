@@ -51,42 +51,6 @@ def user_mention(user: User) -> str:
     return mention_html(user.id, user.first_name)
 
 
-async def extract_user_and_reason(
-    message: Message, context: ContextTypes.DEFAULT_TYPE
-) -> Tuple[Optional[int], Optional[str], Optional[User]]:
-    user_id = None
-    reason = None
-    user_obj = None
-    args = context.args or []
-
-    if message.reply_to_message and message.reply_to_message.from_user:
-        user_obj = message.reply_to_message.from_user
-        user_id = user_obj.id
-        reason = " ".join(args) if args else None
-    elif args:
-        first_arg = args[0]
-
-        if USER_ID_REGEX.match(first_arg):
-            user_id = int(first_arg)
-            reason = " ".join(args[1:]) if len(args) > 1 else None
-        elif USERNAME_REGEX.match(first_arg):
-            first_arg.lstrip("@")
-            reason = " ".join(args[1:]) if len(args) > 1 else None
-            return None, reason, None  # Will need to handle via @username
-        else:
-            reason = " ".join(args)
-
-    if user_id and not user_obj:
-        try:
-            chat = message.chat
-            member = await context.bot.get_chat_member(chat.id, user_id)
-            user_obj = member.user
-        except Exception:
-            pass
-
-    return user_id, reason, user_obj
-
-
 async def get_target_user(
     update: Update, context: ContextTypes.DEFAULT_TYPE, return_rest: bool = False
 ) -> Tuple[Optional[int], Optional[str]]:
@@ -139,52 +103,3 @@ async def get_target_user(
     return None, None
 
 
-async def is_user_in_chat(chat_id: int, user_id: int, context: ContextTypes.DEFAULT_TYPE) -> bool:
-    try:
-        member = await context.bot.get_chat_member(chat_id, user_id)
-        return member.status not in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
-    except Exception:
-        return False
-
-
-async def can_act_on_user(
-    context: ContextTypes.DEFAULT_TYPE,
-    chat_id: int,
-    user_id: int,
-    target_id: int,
-) -> bool:
-    bot_id = context.bot.id
-
-    if target_id == bot_id:
-        return False
-
-    if target_id == user_id:
-        return False
-
-    try:
-        target_member = await context.bot.get_chat_member(chat_id, target_id)
-        if target_member.status in (ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR):
-            return False
-    except Exception:
-        # If user is not in chat, action (like ban/unban) might still be permitted
-        pass
-
-    return True
-
-
-def format_duration(td: timedelta) -> str:
-    total_seconds = int(td.total_seconds())
-    if total_seconds < 60:
-        return f"{total_seconds} second(s)"
-    elif total_seconds < 3600:
-        return f"{total_seconds // 60} minute(s)"
-    elif total_seconds < 86400:
-        return f"{total_seconds // 3600} hour(s)"
-    else:
-        return f"{total_seconds // 86400} day(s)"
-
-
-def truncate(text: str, max_len: int = 4000) -> str:
-    if len(text) <= max_len:
-        return text
-    return text[:max_len - 3] + "..."

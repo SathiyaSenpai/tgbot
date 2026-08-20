@@ -98,7 +98,7 @@ def admin_required(func: Callable) -> Callable:
         user = update.effective_user
         user_id = user.id if user else 0
         if not await is_user_admin(update.effective_chat.id, user_id, context, update):
-            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
+            await update.effective_message.reply_text("Tch. You need admin rights for that.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper
@@ -109,136 +109,28 @@ def owner_required(func: Callable) -> Callable:
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         if not update.effective_chat or update.effective_chat.type == ChatType.PRIVATE:
             if update.effective_user and update.effective_user.id != OWNER_ID:
-                await update.effective_message.reply_text("Gomen nasai! (｡>﹏<｡) Only my master can use this command!")
+                await update.effective_message.reply_text("Only my owner can use this.")
                 return
             return await func(update, context, *args, **kwargs)
 
         user = update.effective_user
         user_id = user.id if user else 0
         if user_id != OWNER_ID and not await is_user_owner(update.effective_chat.id, user_id, context):
-            await update.effective_message.reply_text("Eeeh?! (・_・;) Only the group owner can tell me to do that!")
+            await update.effective_message.reply_text("Only the group owner can do that. Not you.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper
 
 
-def can_restrict(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
-        chat = update.effective_chat
-        if not chat or chat.type == ChatType.PRIVATE:
-            return
-
-        user = update.effective_user
-        user_id = user.id if user else 0
-        if not await is_user_admin(chat.id, user_id, context, update):
-            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
-            return
-
-        bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member:
-            await update.effective_message.reply_text("Uwah~ (╥﹏╥) I couldn't check my permissions... something went wrong!")
-            return
-
-        if bot_member.status == ChatMemberStatus.OWNER:
-            return await func(update, context, *args, **kwargs)
-        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
-            if not getattr(bot_member, 'can_restrict_members', False):
-                await update.effective_message.reply_text(
-                    "Gomen, senpai~ (╥﹏╥) I need the 'Restrict Members' permission to do this! Please give it to me~"
-                )
-                return
-        else:
-            await update.effective_message.reply_text("E-eh?! (O_O) I need to be an admin first before I can help you with that!")
-            return
-
-        return await func(update, context, *args, **kwargs)
-    return wrapper
 
 
-def can_delete(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
-        chat = update.effective_chat
-        if not chat or chat.type == ChatType.PRIVATE:
-            return
-
-        user = update.effective_user
-        user_id = user.id if user else 0
-        if not await is_user_admin(chat.id, user_id, context, update):
-            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
-            return
-
-        bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member:
-            await update.effective_message.reply_text("Uwah~ (╥﹏╥) I couldn't check my permissions... something went wrong!")
-            return
-
-        if bot_member.status == ChatMemberStatus.OWNER:
-            return await func(update, context, *args, **kwargs)
-        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
-            if not getattr(bot_member, 'can_delete_messages', False):
-                await update.effective_message.reply_text(
-                    "Senpai... (｡•́︿•̀｡) I can't delete messages without the 'Delete Messages' permission!"
-                )
-                return
-        else:
-            await update.effective_message.reply_text("E-eh?! (O_O) I need to be an admin first before I can help you with that!")
-            return
-
-        return await func(update, context, *args, **kwargs)
-    return wrapper
-
-
-def can_pin(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
-        chat = update.effective_chat
-        if not chat or chat.type == ChatType.PRIVATE:
-            return
-
-        user = update.effective_user
-        user_id = user.id if user else 0
-        if not await is_user_admin(chat.id, user_id, context, update):
-            await update.effective_message.reply_text("B-baka! (︶︹︺) You need to be an admin to tell me what to do, senpai~")
-            return
-
-        bot_member = await get_bot_permissions(chat.id, context)
-        if not bot_member:
-            await update.effective_message.reply_text("Uwah~ (╥﹏╥) I couldn't check my permissions... something went wrong!")
-            return
-
-        if bot_member.status == ChatMemberStatus.OWNER:
-            return await func(update, context, *args, **kwargs)
-        elif bot_member.status == ChatMemberStatus.ADMINISTRATOR:
-            if not getattr(bot_member, 'can_pin_messages', False):
-                await update.effective_message.reply_text(
-                    "I can't pin anything! (ノ﹏ヽ) I need the 'Pin Messages' permission, senpai~"
-                )
-                return
-        else:
-            await update.effective_message.reply_text("E-eh?! (O_O) I need to be an admin first before I can help you with that!")
-            return
-
-        return await func(update, context, *args, **kwargs)
-    return wrapper
-
-
-def private_only(func: Callable) -> Callable:
-    @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
-        if update.effective_chat and update.effective_chat.type != ChatType.PRIVATE:
-            await update.effective_message.reply_text("Kyaa! (⁄ ⁄•⁄ω⁄•⁄ ⁄) Let's do this in a private chat, okay?")
-            return
-        return await func(update, context, *args, **kwargs)
-    return wrapper
 
 
 def group_only(func: Callable) -> Callable:
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
         if update.effective_chat and update.effective_chat.type == ChatType.PRIVATE:
-            await update.effective_message.reply_text("Senpai~ this command is only for groups! (´• ω •`)")
+            await update.effective_message.reply_text("This command only works in groups.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapper

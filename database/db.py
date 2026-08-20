@@ -65,85 +65,22 @@ CREATE TABLE IF NOT EXISTS users (
     last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Warnings
-CREATE TABLE IF NOT EXISTS warnings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    reason TEXT,
-    warned_by INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 CREATE INDEX IF NOT EXISTS idx_warnings_chat_user ON warnings(chat_id, user_id);
 
--- Notes
-CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    content TEXT,
-    media_type TEXT,
-    media_id TEXT,
-    is_private INTEGER DEFAULT 0,
-    is_admin INTEGER DEFAULT 0,
-    is_protected INTEGER DEFAULT 0,
-    UNIQUE(chat_id, name)
-);
 
--- Filters
-CREATE TABLE IF NOT EXISTS filters (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER NOT NULL,
-    trigger_text TEXT NOT NULL,
-    match_mode TEXT DEFAULT 'contains',
-    response TEXT,
-    media_type TEXT,
-    media_id TEXT,
-    UNIQUE(chat_id, trigger_text)
-);
 
--- Blocklist
-CREATE TABLE IF NOT EXISTS blocklist (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER NOT NULL,
-    trigger_text TEXT NOT NULL,
-    reason TEXT,
-    action TEXT,
-    UNIQUE(chat_id, trigger_text)
-);
 
--- Blocklisted users
-CREATE TABLE IF NOT EXISTS blocklist_users (
-    chat_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    reason TEXT,
-    blocked_by INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(chat_id, user_id)
-);
 
--- Disabled commands
-CREATE TABLE IF NOT EXISTS disabled_commands (
-    chat_id INTEGER NOT NULL,
-    command TEXT NOT NULL,
-    PRIMARY KEY(chat_id, command)
-);
 
--- Locks
-CREATE TABLE IF NOT EXISTS locks (
-    chat_id INTEGER NOT NULL,
-    lock_type TEXT NOT NULL,
-    PRIMARY KEY(chat_id, lock_type)
-);
 
--- Approved users
-CREATE TABLE IF NOT EXISTS approved_users (
-    chat_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    approved_by INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(chat_id, user_id)
-);
+
+
+
+
+
+
+
 
 -- Connections (PM ↔ Group)
 CREATE TABLE IF NOT EXISTS connections (
@@ -199,26 +136,10 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
     sent INTEGER DEFAULT 0
 );
 
--- Captcha pending verifications
-CREATE TABLE IF NOT EXISTS captcha_pending (
-    chat_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    answer TEXT NOT NULL,
-    message_id INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(chat_id, user_id)
-);
 
--- Temp actions (temp bans, mutes for tracking expiry)
-CREATE TABLE IF NOT EXISTS temp_actions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    action_type TEXT NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    job_id TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_temp_actions_expires ON temp_actions(expires_at);
+
+
+
 """
 
 
