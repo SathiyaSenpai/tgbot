@@ -67,30 +67,6 @@ async def fetch_gif(query: str) -> str | None:
     except Exception as e:
         logger.error(f"[AI Chat] GIF fetch error: {e}")
     return None
-    try:
-        params = {
-            "q": query,
-            "key": GIPHY_API_KEY,
-            "limit": 10,
-            "contentfilter": "medium",
-            "media_filter": "gif",
-        }
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get("https://tenor.googleapis.com/v2/search", params=params)
-        if resp.status_code == 200:
-            results = resp.json().get("results", [])
-            if results:
-                pick = random.choice(results)
-                # Get the GIF URL from the media formats
-                media = pick.get("media_formats", {})
-                gif_url = (
-                    media.get("gif", {}).get("url")
-                    or media.get("mediumgif", {}).get("url")
-                )
-                return gif_url
-    except Exception as e:
-        logger.error(f"[AI Chat] GIF fetch error: {e}")
-    return None
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
