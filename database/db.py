@@ -168,12 +168,15 @@ CREATE TABLE IF NOT EXISTS chat_persona (
 """
 
 
+import asyncio
+
 class Database:
     """Async SQLite database manager optimized for low memory usage."""
 
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._conn: Optional[aiosqlite.Connection] = None
+        self._lock = asyncio.Lock()
 
     async def init(self) -> None:
         """Initialize database connection with memory-efficient PRAGMAs and create schema."""
@@ -184,58 +187,68 @@ class Database:
         self._conn.row_factory = aiosqlite.Row
 
         # Memory-efficient PRAGMAs
-        await self._conn.execute("PRAGMA journal_mode = WAL;")
-        await self._conn.execute("PRAGMA synchronous = NORMAL;")
-        await self._conn.execute("PRAGMA cache_size = -2000;")  # 2MB cap
-        await self._conn.execute("PRAGMA busy_timeout = 5000;")
-        await self._conn.execute("PRAGMA temp_store = MEMORY;")
-        await self._conn.execute("PRAGMA mmap_size = 0;")  # Disable mmap on low RAM
-        await self._conn.execute("PRAGMA foreign_keys = ON;")
+        async with self._lock:
+            await self._conn.execute("PRAGMA journal_mode = WAL;")
+            await self._conn.execute("PRAGMA synchronous = NORMAL;")
+            await self._conn.execute("PRAGMA cache_size = -2000;")  # 2MB cap
+            await self._conn.execute("PRAGMA busy_timeout = 5000;")
+            await self._conn.execute("PRAGMA temp_store = MEMORY;")
+            await self._conn.execute("PRAGMA mmap_size = 0;")  # Disable mmap on low RAM
+            await self._conn.execute("PRAGMA foreign_keys = ON;")
 
-        # Run schema creation
-        await self._conn.executescript(SCHEMA_SQL)
+            # Run schema creation
+            await self._conn.executescript(SCHEMA_SQL)
 
-        # Track schema version
-        row = await self.fetchone("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
-        if row is None:
-            await self.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
-            await self.commit()
+            # Track schema version
+            cursor = await self._conn.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
+            row = await cursor.fetchone()
+            if row is None:
+                await self._conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
+                await self._conn.commit()
 
         logger.info(f"Database initialized at {self.db_path}")
 
     async def close(self) -> None:
         """Close database connection."""
         if self._conn:
-            await self._conn.close()
-            self._conn = None
+            async with self._lock:
+                await self._conn.close()
+                self._conn = None
             logger.info("Database connection closed.")
 
     async def execute(self, sql: str, params: tuple = ()) -> aiosqlite.Cursor:
         """Execute a SQL query."""
-        return await self._conn.execute(sql, params)
+        async with self._lock:
+            return await self._conn.execute(sql, params)
 
     async def executemany(self, sql: str, params_list: list) -> aiosqlite.Cursor:
         """Execute a SQL query with multiple parameter sets."""
-        return await self._conn.executemany(sql, params_list)
+        async with self._lock:
+            return await self._conn.executemany(sql, params_list)
 
     async def commit(self) -> None:
         """Commit current transaction."""
-        await self._conn.commit()
+        async with self._lock:
+            await self._conn.commit()
 
     async def fetchone(self, sql: str, params: tuple = ()) -> Optional[aiosqlite.Row]:
         """Fetch a single row."""
-        cursor = await self._conn.execute(sql, params)
-        return await cursor.fetchone()
+        async with self._lock:
+            cursor = await self._conn.execute(sql, params)
+            return await cursor.fetchone()
 
     async def fetchall(self, sql: str, params: tuple = ()) -> List[aiosqlite.Row]:
         """Fetch all rows."""
-        cursor = await self._conn.execute(sql, params)
-        return await cursor.fetchall()
+        async with self._lock:
+            cursor = await self._conn.execute(sql, params)
+            return await cursor.fetchall()
 
     async def fetchval(self, sql: str, params: tuple = (), default=None):
         """Fetch a single value from the first column of the first row."""
-        row = await self.fetchone(sql, params)
-        return row[0] if row else default
+        async with self._lock:
+            cursor = await self._conn.execute(sql, params)
+            row = await cursor.fetchone()
+            return row[0] if row else default
 
     # --- Chat helpers ---
 

@@ -18,6 +18,10 @@ def register(app):
     app.add_handler(CommandHandler("keepcommand", keepcommand), group=0)
     app.add_handler(PrefixHandler(['!', '?'], "keepcommand", keepcommand), group=0)
 
+# Keep a strong reference to background tasks so the Python Garbage Collector
+# doesn't destroy them while they are sleeping (which would prevent deletion).
+_background_tasks = set()
+
 async def auto_delete_message(message, delay=300):
     async def delete_task():
         try:
@@ -28,7 +32,9 @@ async def auto_delete_message(message, delay=300):
         except Exception as e:
             logger.error(f"Unexpected error in auto_delete_message: {e}")
             
-    asyncio.create_task(delete_task())
+    task = asyncio.create_task(delete_task())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 async def delete_command_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_chat or not update.effective_message:

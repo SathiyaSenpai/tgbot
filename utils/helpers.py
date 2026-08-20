@@ -86,20 +86,4 @@ async def get_target_user(
 
     return None, None
 
-    first_arg = args[0]
-    rest = " ".join(args[1:]) if len(args) > 1 else None
-
-    if USER_ID_REGEX.match(first_arg):
-        user_id = int(first_arg)
-        return user_id, rest
-
-    if USERNAME_REGEX.match(first_arg):
-        # Username resolution needs cache, for now return None to prompt failure
-        return None, rest
-
-    if return_rest:
-        return None, " ".join(args)
-
-    return None, None
-
 

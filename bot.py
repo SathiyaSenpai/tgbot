@@ -78,8 +78,8 @@ async def post_shutdown(application: Application) -> None:
 def main():
     validate_config()
 
-    # Aggressive garbage collection for low-memory servers
-    gc.set_threshold(400, 5, 5)
+    # Balanced garbage collection (avoiding CPU thrashing from low gen1/2 thresholds)
+    gc.set_threshold(700, 50, 50)
 
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
