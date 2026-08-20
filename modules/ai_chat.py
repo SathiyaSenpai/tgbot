@@ -65,7 +65,7 @@ async def fetch_gif(query: str) -> str | None:
                 gif_url = pick.get("images", {}).get("original", {}).get("url")
                 return gif_url
     except Exception as e:
-        logger.warning(f"[AI Chat] GIF fetch error: {e}")
+        logger.error(f"[AI Chat] GIF fetch error: {e}")
     return None
     try:
         params = {
@@ -89,7 +89,7 @@ async def fetch_gif(query: str) -> str | None:
                 )
                 return gif_url
     except Exception as e:
-        logger.warning(f"[AI Chat] GIF fetch error: {e}")
+        logger.error(f"[AI Chat] GIF fetch error: {e}")
     return None
 
 
@@ -150,15 +150,25 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text(reply_text)
 
         # Optionally send a contextually relevant GIF
-        if send_gif and GIPHY_API_KEY:
-            # gif_query already provided by engine
-            gif_url = await fetch_gif(gif_query)
-            if gif_url:
-                await context.bot.send_animation(
-                    chat_id=chat_id,
-                    animation=gif_url,
-                    reply_to_message_id=msg.message_id,
-                )
+        if send_gif:
+            if not GIPHY_API_KEY:
+                logger.error("[AI Chat] Wanted to send GIF, but GIPHY_API_KEY is missing!")
+            else:
+                logger.info(f"[AI Chat] Fetching GIF for query: '{gif_query}'")
+                gif_url = await fetch_gif(gif_query)
+                if gif_url:
+                    logger.info(f"[AI Chat] Successfully fetched GIF: {gif_url}")
+                    try:
+                        await context.bot.send_animation(
+                            chat_id=chat_id,
+                            animation=gif_url,
+                            reply_to_message_id=msg.message_id,
+                        )
+                        logger.info("[AI Chat] Successfully sent GIF to Telegram.")
+                    except Exception as tg_err:
+                        logger.error(f"[AI Chat] Telegram failed to send GIF ({gif_url}): {tg_err}")
+                else:
+                    logger.error(f"[AI Chat] fetch_gif returned None for query '{gif_query}'")
 
     except Exception as e:
         logger.error(f"[AI Chat] Unexpected error in handle_chat: {e}")
