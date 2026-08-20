@@ -22,6 +22,64 @@ def register(app):
     app.add_handler(PrefixHandler(['!', '?'], "cancelschedule", cancel_schedule), group=0)
 
 
+    # Reload lost scheduled jobs on startup
+    app.job_queue.run_once(_reload_schedules_on_startup, 5)
+
+
+async def _reload_schedules_on_startup(context: ContextTypes.DEFAULT_TYPE):
+    import datetime
+    db = context.bot_data.get("db")
+    if not db:
+        return
+
+    try:
+        rows = await db.fetchall(
+            "SELECT id, chat_id, user_id, message_text, send_at, job_id "
+            "FROM scheduled_messages WHERE sent = 0"
+        )
+        if not rows:
+            return
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        reloaded = 0
+
+        for row in rows:
+            schedule_id = row["id"]
+            chat_id = row["chat_id"]
+            user_id = row["user_id"]
+            message_text = row["message_text"]
+            send_at_str = row["send_at"]
+            
+            try:
+                # Parse SQLite datetime string e.g. "2026-08-20 23:45:00"
+                send_at = datetime.datetime.strptime(send_at_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc)
+                delay = (send_at - now).total_seconds()
+            except Exception as e:
+                logger.error(f"Failed to parse time for schedule #{schedule_id}: {e}")
+                continue
+
+            if delay <= 0:
+                delay = 1  # Send immediately if missed
+
+            new_job = context.job_queue.run_once(
+                _send_scheduled_message,
+                delay,
+                data={"chat_id": chat_id, "text": message_text, "schedule_id": schedule_id},
+                chat_id=chat_id,
+                user_id=user_id
+            )
+            
+            # Update job_id in database since the PTB Job ID has changed
+            await db.execute("UPDATE scheduled_messages SET job_id = ? WHERE id = ?", (new_job.id, schedule_id))
+            reloaded += 1
+            
+        await db.commit()
+        logger.info(f"[Scheduled] Reloaded {reloaded} pending scheduled messages.")
+
+    except Exception as e:
+        logger.error(f"[Scheduled] Failed to reload pending schedules: {e}")
+
+
 async def _require_pm_with_connection(update: Update, context) -> tuple[int, str]:
     """
     Ensures the command is used only in PM and the user has a connected group.
@@ -92,19 +150,23 @@ async def schedule_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     try:
+        # We need the ID first, so we insert, then run_once, then update job_id
+        cursor = await db.execute(
+            "INSERT INTO scheduled_messages (chat_id, user_id, message_text, send_at, job_id, sent) "
+            "VALUES (?, ?, ?, datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), ?, 0)",
+            (chat_id, user_id, message_text, delay_seconds, "pending"),
+        )
+        schedule_id = cursor.lastrowid
+
         job = context.job_queue.run_once(
             _send_scheduled_message,
             delay,
-            data={"chat_id": chat_id, "text": message_text},
+            data={"chat_id": chat_id, "text": message_text, "schedule_id": schedule_id},
             chat_id=chat_id,
             user_id=user_id,
         )
 
-        await db.execute(
-            "INSERT INTO scheduled_messages (chat_id, user_id, message_text, send_at, job_id, sent) "
-            "VALUES (?, ?, ?, datetime(CURRENT_TIMESTAMP, '+' || ? || ' seconds'), ?, 0)",
-            (chat_id, user_id, message_text, delay_seconds, job.id),
-        )
+        await db.execute("UPDATE scheduled_messages SET job_id = ? WHERE id = ?", (job.id, schedule_id))
         await db.commit()
 
         await update.effective_message.reply_text(
@@ -122,12 +184,16 @@ async def _send_scheduled_message(context: ContextTypes.DEFAULT_TYPE):
     data = job.data
     chat_id = data["chat_id"]
     text = data["text"]
+    schedule_id = data.get("schedule_id")
     db = context.bot_data.get("db")
 
     try:
         await context.bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
         if db:
-            await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE job_id = ?", (job.id,))
+            if schedule_id:
+                await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE id = ?", (schedule_id,))
+            else:
+                await db.execute("UPDATE scheduled_messages SET sent = 1 WHERE job_id = ?", (job.id,))
             await db.commit()
     except Exception as e:
         logger.error(f"[Scheduled] Failed to deliver message to {chat_id}: {e}")

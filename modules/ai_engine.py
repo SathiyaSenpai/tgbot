@@ -8,8 +8,10 @@ import logging
 import time
 import random
 import re
+from datetime import datetime
 from collections import deque
 from typing import Optional
+from modules.chat_rules import get_rules_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +171,7 @@ def clear_memory(chat_id: int):
 # MOOD SYSTEM
 # ──────────────────────────────────────────────
 def get_current_mood() -> str:
-    import datetime
-    hour = datetime.datetime.now().hour
+    hour = datetime.now().hour
     if 0 <= hour < 5:
         return "late night — tired but awake. Raw, unfiltered, shorter replies."
     elif 5 <= hour < 9:
@@ -416,7 +417,6 @@ async def generate_reply(
     effective_system_prompt = SYSTEM_PROMPT
     if db is not None:
         try:
-            from modules.chat_rules import get_rules_for_prompt
             rules_block = await get_rules_for_prompt(chat_id, db)
             if rules_block:
                 effective_system_prompt = SYSTEM_PROMPT + rules_block

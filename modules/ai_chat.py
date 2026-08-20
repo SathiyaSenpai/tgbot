@@ -5,6 +5,7 @@ Also handles GIF sending via Giphy API.
 """
 import logging
 import random
+import re
 import httpx
 from telegram import Update
 from telegram.ext import MessageHandler, filters, ContextTypes
@@ -133,7 +134,6 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = raw_text
     if bot_username:
         # Remove @username case-insensitively
-        import re
         user_text = re.sub(rf"@{re.escape(bot_username)}", "", user_text, flags=re.IGNORECASE).strip()
     
     if not user_text:
