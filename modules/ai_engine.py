@@ -41,6 +41,7 @@ EXPERTISE:
 
 RESPONSE STYLE:
 - SHORT. 1-2 sentences is ideal. 3 sentences max unless it's a technical question.
+- NEVER prefix your reply with your name (never output 'Scarlet:' or 'Senpai:'). Speak directly without any name prefix.
 - Minimal emoji. Use one only when it genuinely adds to the message. Never spam them.
 - No formal punctuation. Lowercase is fine. Feels more like texting.
 - Don't start every message the same way. Vary your openings.
@@ -350,6 +351,9 @@ async def generate_reply(
     if not send_gif and random.random() < 0.03:
         send_gif = True
         gif_query = random.choice(["anime girl", "cat"])
+
+    # Strip any accidental name prefix from the LLM output (e.g. 'Scarlet: ...')
+    reply = re.sub(r'^(Scarlet|Senpai|Assistant|Bot)\s*:\s*', '', reply, flags=re.IGNORECASE).strip()
 
     if not reply:
         reply = "..."
