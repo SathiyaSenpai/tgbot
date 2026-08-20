@@ -113,15 +113,22 @@ async def random_chat_job(context: ContextTypes.DEFAULT_TYPE):
                     db=db,
                 )
 
-                await context.bot.send_message(chat_id=chat_id, text=reply_text)
-                _increment_count(chat_id)
+                sent = False
 
                 # Very rarely add a GIF to a spontaneous message
-                if send_gif and GIPHY_API_KEY and random.random() < 0.10:
+                if send_gif and GIPHY_API_KEY and random.random() < 0.20:
                     from modules.ai_chat import fetch_gif
                     gif_url = await fetch_gif(gif_query)
                     if gif_url:
                         await context.bot.send_animation(chat_id=chat_id, animation=gif_url)
+                        sent = True
+
+                if not sent and reply_text and reply_text != "...":
+                    await context.bot.send_message(chat_id=chat_id, text=reply_text)
+                    sent = True
+                    
+                if sent:
+                    _increment_count(chat_id)
 
             except TelegramError as e:
                 logger.warning(f"[Random Chatter] Telegram error for chat {chat_id}: {e}")

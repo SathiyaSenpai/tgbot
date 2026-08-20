@@ -9,6 +9,8 @@ from telegram import Update
 from telegram.ext import MessageHandler, CommandHandler, filters, ContextTypes
 from telegram.constants import ChatType, ParseMode
 
+from utils.decorators import admin_required
+
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────
@@ -176,6 +178,7 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
+@admin_required
 async def delete_rule(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Delete a specific rule by ID."""
     if not context.args:
@@ -205,7 +208,7 @@ async def delete_rule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.effective_message.reply_text(f"✅ Rule <code>#{rule_id}</code> removed.", parse_mode=ParseMode.HTML)
 
-
+@admin_required
 async def clear_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Wipe all rules for this chat (admin only by convention)."""
     db = context.bot_data.get("db")
