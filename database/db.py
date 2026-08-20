@@ -82,6 +82,14 @@ CREATE INDEX IF NOT EXISTS idx_warnings_chat_user ON warnings(chat_id, user_id);
 
 
 
+
+-- Disabled commands
+CREATE TABLE IF NOT EXISTS disabled_commands (
+    chat_id INTEGER NOT NULL,
+    command TEXT NOT NULL,
+    PRIMARY KEY(chat_id, command)
+);
+
 -- Connections (PM ↔ Group)
 CREATE TABLE IF NOT EXISTS connections (
     user_id INTEGER PRIMARY KEY,
